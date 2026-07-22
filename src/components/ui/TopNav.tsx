@@ -14,6 +14,7 @@ import {
   Palette,
   Sparkles,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 import { ExportModal } from './ExportModal';
 import { ShareModal } from './ShareModal';
@@ -29,6 +30,7 @@ export const TopNav: React.FC = () => {
     redo,
     history,
     importJSON,
+    clearCanvas,
   } = useCanvasStore();
 
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -36,6 +38,7 @@ export const TopNav: React.FC = () => {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
 
   const zoomPercent = Math.round(viewport.zoom * 100);
+  const isChalkboard = theme === 'chalkboard';
 
   const themes: { id: BoardTheme; label: string; icon: string }[] = [
     { id: 'whiteboard', label: 'Белый холст', icon: '⬜' },
@@ -99,17 +102,27 @@ export const TopNav: React.FC = () => {
     }
   };
 
+  const handleClearCanvas = () => {
+    if (window.confirm('Очистить весь холст? Данное действие создаст снимок для отмены (Ctrl+Z).')) {
+      clearCanvas();
+    }
+  };
+
   return (
     <>
       <header className="fixed top-5 left-6 right-6 z-50 flex items-center justify-between pointer-events-none">
-        {/* Left Branding - Pure minimalist text polotno, no backgrounds or icons */}
+        {/* Left Branding - Adaptive polotno title (Black on light canvas, White on chalkboard) */}
         <div className="pointer-events-auto">
-          <span className="font-extrabold text-4xl tracking-tighter text-neutral-900 dark:text-neutral-100 select-none">
+          <span
+            className={`font-black text-3xl tracking-tighter select-none transition-colors duration-300 ${
+              isChalkboard ? 'text-white drop-shadow-md' : 'text-[#1d1d1f]'
+            }`}
+          >
             polotno
           </span>
         </div>
 
-        {/* Right Actions & Controls */}
+        {/* Right Actions & Controls - Dark/Glassmorphic Sleek Pills */}
         <div className="flex items-center gap-2 pointer-events-auto">
           {/* History Undo / Redo */}
           <div className="flex items-center gap-1 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 p-1.5 rounded-2xl">
@@ -193,10 +206,11 @@ export const TopNav: React.FC = () => {
                         setTheme(t.id);
                         setIsThemeOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold transition ${theme === t.id
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold transition ${
+                        theme === t.id
                           ? 'bg-blue-600 text-white shadow-sm'
                           : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                        }`}
+                      }`}
                     >
                       <span className="flex items-center gap-2.5">
                         <span className="text-sm">{t.icon}</span>
@@ -212,8 +226,9 @@ export const TopNav: React.FC = () => {
             )}
           </div>
 
-          {/* Import / Export & Share */}
+          {/* Import / Clear / Export & Share */}
           <div className="flex items-center gap-2 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 p-1.5 rounded-2xl">
+            {/* Import JSON file */}
             <label
               className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition"
               title="Импорт файла (.json)"
@@ -227,6 +242,16 @@ export const TopNav: React.FC = () => {
               />
             </label>
 
+            {/* Clear All Canvas (Trash Bin icon) */}
+            <button
+              onClick={handleClearCanvas}
+              className="p-2 rounded-xl hover:bg-red-50 text-neutral-700 dark:text-neutral-300 transition"
+              title="Очистить холст"
+            >
+              <Trash2 className="w-4 h-4 text-red-500" />
+            </button>
+
+            {/* Export */}
             <button
               onClick={() => setIsExportOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 font-bold text-xs shadow-sm transition"
@@ -235,6 +260,7 @@ export const TopNav: React.FC = () => {
               <span>Экспорт</span>
             </button>
 
+            {/* Share */}
             <button
               onClick={() => setIsShareOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-500 font-bold text-xs shadow-md transition"

@@ -71,7 +71,7 @@ function renderBackground(
     ctx.fillStyle = '#1b2a24';
     ctx.fillRect(0, 0, width, height);
 
-    // Chalk dust texture / noise
+    // Chalk dust noise texture
     ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
     for (let i = 0; i < 200; i++) {
       const rx = (Math.sin(i * 999) * 0.5 + 0.5) * width;
@@ -79,39 +79,26 @@ function renderBackground(
       ctx.fillRect(rx, ry, 3, 3);
     }
   } else if (theme === 'paper') {
-    // Warm beige paper background
-    ctx.fillStyle = '#f5f0eb';
+    // Whiter, clean warm paper background (NO grid lines)
+    ctx.fillStyle = '#F9F6F0';
     ctx.fillRect(0, 0, width, height);
-
-    // Subtle paper grain dots
-    ctx.fillStyle = 'rgba(120, 100, 80, 0.03)';
-    for (let i = 0; i < 150; i++) {
-      const rx = (Math.sin(i * 777) * 0.5 + 0.5) * width;
-      const ry = (Math.cos(i * 444) * 0.5 + 0.5) * height;
-      ctx.fillRect(rx, ry, 2, 2);
-    }
   } else {
     // Clean off-white background
     ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, width, height);
   }
 
-  if (theme === 'grid' || theme === 'dots' || theme === 'ruled' || theme === 'paper') {
+  if (theme === 'grid' || theme === 'dots' || theme === 'ruled') {
     ctx.save();
     const gridSize = 32 * viewport.zoom;
     const offsetX = viewport.x % gridSize;
     const offsetY = viewport.y % gridSize;
 
-    if (theme === 'paper') {
-      ctx.strokeStyle = 'rgba(140, 110, 80, 0.08)';
-      ctx.fillStyle = 'rgba(140, 110, 80, 0.12)';
-    } else {
-      ctx.strokeStyle = theme === 'chalkboard' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-      ctx.fillStyle = theme === 'chalkboard' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
-    }
+    ctx.strokeStyle = theme === 'chalkboard' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    ctx.fillStyle = theme === 'chalkboard' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
 
-    if (theme === 'grid' || theme === 'paper') {
+    if (theme === 'grid') {
       ctx.beginPath();
       for (let x = offsetX; x < width; x += gridSize) {
         ctx.moveTo(x, 0);
@@ -291,7 +278,7 @@ function getImageFromCache(src: string): HTMLImageElement | null {
 }
 
 /**
- * Renders bounding box and handles.
+ * Selection Box and Handles
  */
 function renderSelectionUI(
   ctx: CanvasRenderingContext2D,
