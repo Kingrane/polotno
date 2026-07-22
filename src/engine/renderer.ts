@@ -94,8 +94,8 @@ function renderBackground(
     const offsetX = viewport.x % gridSize;
     const offsetY = viewport.y % gridSize;
 
-    ctx.strokeStyle = theme === 'chalkboard' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-    ctx.fillStyle = theme === 'chalkboard' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
 
     if (theme === 'grid') {
