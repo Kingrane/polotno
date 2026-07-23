@@ -111,12 +111,12 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-2 rounded-3xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-2xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 transition-all">
+    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-24px)] overflow-x-auto scrollbar-none p-1.5 sm:p-2 rounded-3xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-2xl border border-white/60 dark:border-neutral-800 shadow-2xl shadow-black/10 transition-all flex items-center gap-1 sm:gap-1.5 touch-manipulation">
       {tools.map((t) => (
         <button
           key={t.id}
           onClick={() => setTool(t.id)}
-          className={`relative group flex items-center justify-center w-10 h-10 rounded-2xl transition-all ${
+          className={`relative group flex items-center justify-center min-w-[42px] min-h-[42px] sm:w-10 sm:h-10 rounded-2xl transition-all ${
             tool === t.id
               ? 'bg-blue-600 text-white shadow-md scale-105 font-bold'
               : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -125,7 +125,7 @@ export const Toolbar: React.FC = () => {
         >
           {t.icon}
 
-          {/* Tooltip */}
+          {/* Desktop Tooltip */}
           <div className="absolute bottom-full mb-3 hidden group-hover:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-neutral-900 text-white text-xs font-semibold whitespace-nowrap shadow-xl">
             <span>{t.label}</span>
             <span className="text-[10px] text-neutral-400 bg-neutral-800 px-1.5 py-0.5 rounded font-mono">
@@ -135,12 +135,12 @@ export const Toolbar: React.FC = () => {
         </button>
       ))}
 
-      <div className="h-6 w-px bg-neutral-200 dark:bg-neutral-700 mx-1" />
+      <div className="h-6 w-px bg-neutral-200 dark:bg-neutral-700 mx-1 shrink-0" />
 
       {/* Image Upload Button */}
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="relative group flex items-center justify-center w-10 h-10 rounded-2xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+        className="relative group flex items-center justify-center min-w-[42px] min-h-[42px] sm:w-10 sm:h-10 rounded-2xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
         title="Вставить картинку"
       >
         <ImageIcon className="w-4 h-4" />

@@ -15,9 +15,13 @@ import {
   Sparkles,
   ChevronDown,
   Trash2,
+  Crown,
+  Menu,
+  X,
 } from 'lucide-react';
 import { ExportModal } from './ExportModal';
 import { ShareModal } from './ShareModal';
+import { ProModal } from './ProModal';
 
 export const TopNav: React.FC = () => {
   const {
@@ -36,6 +40,8 @@ export const TopNav: React.FC = () => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const [isProOpen, setIsProOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const zoomPercent = Math.round(viewport.zoom * 100);
   const isChalkboard = theme === 'chalkboard';
@@ -110,26 +116,26 @@ export const TopNav: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-5 left-6 right-6 z-50 flex items-center justify-between pointer-events-none">
-        {/* Left Branding - Adaptive polotno title (Black on light canvas, White on chalkboard) */}
-        <div className="pointer-events-auto">
+      <header className="fixed top-3 sm:top-5 left-3 sm:left-6 right-3 sm:right-6 z-50 flex items-center justify-between pointer-events-none">
+
+        {/* Left Branding - Adaptive polotno title (prominent size on all screens) */}
+        <div className="pointer-events-auto flex items-center gap-3">
           <span
-            className={`font-black text-3xl tracking-tighter select-none transition-colors duration-300 ${
-              isChalkboard ? 'text-white drop-shadow-md' : 'text-[#1d1d1f]'
-            }`}
+            className={`font-black text-2xl sm:text-3xl md:text-4xl tracking-tighter select-none transition-colors duration-300 ${isChalkboard ? 'text-white drop-shadow-md' : 'text-[#1d1d1f]'
+              }`}
           >
             polotno
           </span>
         </div>
 
-        {/* Right Actions & Controls - Dark/Glassmorphic Sleek Pills */}
-        <div className="flex items-center gap-2 pointer-events-auto">
+        {/* Desktop Right Actions & Controls */}
+        <div className="hidden md:flex items-center gap-2 pointer-events-auto">
           {/* History Undo / Redo */}
           <div className="flex items-center gap-1 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 p-1.5 rounded-2xl">
             <button
               onClick={undo}
               disabled={history.past.length === 0}
-              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent transition"
+              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent transition min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Отменить (Ctrl+Z)"
             >
               <Undo2 className="w-4 h-4" />
@@ -137,7 +143,7 @@ export const TopNav: React.FC = () => {
             <button
               onClick={redo}
               disabled={history.future.length === 0}
-              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent transition"
+              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent transition min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Повторить (Ctrl+Y)"
             >
               <Redo2 className="w-4 h-4" />
@@ -153,7 +159,7 @@ export const TopNav: React.FC = () => {
                   y: window.innerHeight / 2,
                 })
               }
-              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Уменьшить (Ctrl -)"
             >
               <ZoomOut className="w-4 h-4" />
@@ -174,7 +180,7 @@ export const TopNav: React.FC = () => {
                   y: window.innerHeight / 2,
                 })
               }
-              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Увеличить (Ctrl +)"
             >
               <ZoomIn className="w-4 h-4" />
@@ -185,7 +191,7 @@ export const TopNav: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setIsThemeOpen(!isThemeOpen)}
-              className="flex items-center gap-1.5 text-xs text-neutral-800 dark:text-neutral-200 font-bold px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+              className="flex items-center gap-1.5 text-xs text-neutral-800 dark:text-neutral-200 font-bold px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition min-h-[40px]"
             >
               <Palette className="w-4 h-4 text-blue-600" />
               <span>Тема</span>
@@ -206,11 +212,10 @@ export const TopNav: React.FC = () => {
                         setTheme(t.id);
                         setIsThemeOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold transition ${
-                        theme === t.id
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                      }`}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold transition ${theme === t.id
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
+                        }`}
                     >
                       <span className="flex items-center gap-2.5">
                         <span className="text-sm">{t.icon}</span>
@@ -226,11 +231,10 @@ export const TopNav: React.FC = () => {
             )}
           </div>
 
-          {/* Import / Clear / Export & Share */}
+          {/* Import / Clear / Export / Share & Subscription */}
           <div className="flex items-center gap-2 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 p-1.5 rounded-2xl">
-            {/* Import JSON file */}
             <label
-              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition"
+              className="p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Импорт файла (.json)"
             >
               <FolderInput className="w-4 h-4" />
@@ -242,39 +246,160 @@ export const TopNav: React.FC = () => {
               />
             </label>
 
-            {/* Clear All Canvas (Trash Bin icon) */}
             <button
               onClick={handleClearCanvas}
-              className="p-2 rounded-xl hover:bg-red-50 text-neutral-700 dark:text-neutral-300 transition"
+              className="p-2 rounded-xl hover:bg-red-50 text-neutral-700 dark:text-neutral-300 transition min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Очистить холст"
             >
               <Trash2 className="w-4 h-4 text-red-500" />
             </button>
 
-            {/* Export */}
             <button
               onClick={() => setIsExportOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 font-bold text-xs shadow-sm transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 font-bold text-xs shadow-sm transition min-h-[38px]"
             >
               <Download className="w-3.5 h-3.5 text-neutral-300" />
               <span>Экспорт</span>
             </button>
 
-            {/* Share */}
             <button
               onClick={() => setIsShareOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-500 font-bold text-xs shadow-md transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-500 font-bold text-xs shadow-md transition min-h-[38px]"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Поделиться</span>
             </button>
+
+            {/* Dedicated "Подписка" Button right next to Share */}
+            <button
+              onClick={() => setIsProOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-extrabold text-xs shadow-lg shadow-amber-500/20 hover:scale-105 transition transform active:scale-95 min-h-[38px]"
+            >
+              <Crown className="w-3.5 h-3.5 fill-white" />
+              <span>Подписка 79 ₽</span>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Right Quick Controls */}
+        <div className="flex md:hidden items-center gap-1.5 pointer-events-auto">
+          <button
+            onClick={() => setIsProOpen(true)}
+            className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-[11px] shadow-md transition min-h-[42px]"
+          >
+            <Crown className="w-3.5 h-3.5 fill-white" />
+            <span>79 ₽</span>
+          </button>
+          <button
+            onClick={() => setIsShareOpen(true)}
+            className="p-2.5 rounded-2xl bg-blue-600 text-white font-bold shadow-md transition min-w-[42px] min-h-[42px] flex items-center justify-center"
+            title="Поделиться"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2.5 rounded-2xl bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-white/60 dark:border-neutral-800 text-neutral-800 dark:text-white shadow-md transition min-w-[42px] min-h-[42px] flex items-center justify-center"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
+
+      {/* Mobile Drawer Dropdown Menu */}
+      {isMobileMenuOpen && (
+        <div className="fixed top-16 left-3 right-3 z-50 md:hidden bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl border border-white/60 dark:border-neutral-800 shadow-2xl rounded-3xl p-4 text-xs font-semibold space-y-3 animate-in fade-in zoom-in-95">
+          {/* Zoom & History row */}
+          <div className="flex items-center justify-between p-2 rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={undo}
+                disabled={history.past.length === 0}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-30"
+              >
+                <Undo2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={redo}
+                disabled={history.future.length === 0}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-30"
+              >
+                <Redo2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => zoomAtPoint(0.85, { x: window.innerWidth / 2, y: window.innerHeight / 2 })}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="font-mono font-bold">{zoomPercent}%</span>
+              <button
+                onClick={() => zoomAtPoint(1.15, { x: window.innerWidth / 2, y: window.innerHeight / 2 })}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Theme Selector List */}
+          <div className="space-y-1">
+            <label className="text-neutral-400 text-[10px] uppercase font-bold px-2">Тема доски</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-2 rounded-xl text-left flex items-center gap-2 font-semibold ${theme === t.id ? 'bg-blue-600 text-white' : 'bg-neutral-100 dark:bg-neutral-800'
+                    }`}
+                >
+                  <span>{t.icon}</span>
+                  <span className="truncate">{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+            <label className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 font-bold cursor-pointer">
+              <FolderInput className="w-4 h-4" />
+              <span>Импорт</span>
+              <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+            </label>
+
+            <button
+              onClick={handleClearCanvas}
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-red-50 text-red-600 font-bold"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Очистить</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsExportOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-neutral-900 text-white font-bold"
+            >
+              <Download className="w-4 h-4" />
+              <span>Экспорт</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
       <ShareModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} />
+      <ProModal isOpen={isProOpen} onClose={() => setIsProOpen(false)} />
     </>
   );
 };

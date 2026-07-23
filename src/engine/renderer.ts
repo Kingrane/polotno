@@ -80,7 +80,7 @@ function renderBackground(
     }
   } else if (theme === 'paper') {
     // Whiter, clean warm paper background (NO grid lines)
-    ctx.fillStyle = '#F9F6F0';
+    ctx.fillStyle = '#f6eee3';
     ctx.fillRect(0, 0, width, height);
   } else {
     // Clean off-white background
@@ -173,8 +173,8 @@ function renderElement(
       element.strokeStyle === 'dashed'
         ? [8, 8]
         : element.strokeStyle === 'dotted'
-        ? [3, 5]
-        : undefined,
+          ? [3, 5]
+          : undefined,
   };
 
   const x = element.x;
