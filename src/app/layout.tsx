@@ -97,7 +97,7 @@ export default function RootLayout({
       <head>
         <JsonLd data={jsonLdData} />
       </head>
-      <body className={`${mulish.className} min-h-full flex flex-col overflow-hidden bg-neutral-100`}>
+      <body className={`${mulish.className} min-h-full flex flex-col overflow-x-hidden bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100`}>
         {children}
       </body>
     </html>
