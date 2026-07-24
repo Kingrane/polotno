@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { BoardTheme } from '../../engine/types';
+import Link from 'next/link';
 import {
   Undo2,
   Redo2,
@@ -20,6 +21,7 @@ import {
   Menu,
   X,
   User as UserIcon,
+  HelpCircle,
 } from 'lucide-react';
 import { ExportModal } from './ExportModal';
 import { ShareModal } from './ShareModal';
