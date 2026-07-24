@@ -134,7 +134,7 @@ export const StylePanel: React.FC = () => {
         className="fixed top-1/2 -translate-y-1/2 left-2 sm:left-4 z-40 max-w-[calc(100vw-16px)]"
       >
         {/* Relative wrapper without overflow so attached tab button is NEVER clipped */}
-        <div className="relative w-64 sm:w-64">
+        <div className="relative w-67 sm:w-67">
           
           {/* Attached Vertical Tab Toggle Button */}
           <motion.button
@@ -169,7 +169,7 @@ export const StylePanel: React.FC = () => {
           </motion.button>
 
           {/* Inner Content Container */}
-          <div className="w-full max-h-[calc(100vh-140px)] overflow-y-auto bg-white/90 dark:bg-neutral-900/90 backdrop-blur-2xl backdrop-saturate-150 border border-white/60 dark:border-neutral-800 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[22px] p-3 text-xs font-semibold space-y-3">
+          <div className="w-full max-h-[calc(100vh-140px)] overflow-y-auto bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl backdrop-saturate-180 border border-white/60 dark:border-neutral-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[22px] p-3 text-xs font-semibold space-y-3">
             
             {/* Panel Header */}
             <div className="flex items-center justify-between pb-2 border-b border-neutral-200/60 dark:border-neutral-800">
@@ -238,7 +238,7 @@ export const StylePanel: React.FC = () => {
               </div>
 
               {/* 16 Colors Grid (8x2) */}
-              <div className="grid grid-cols-8 gap-1 p-1 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/70">
+              <div className="grid grid-cols-8 gap-1 p-1.5 rounded-xl bg-neutral-100/60 dark:bg-neutral-800/60 border border-neutral-200/50 dark:border-neutral-700/50 backdrop-blur-md">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={strokePage}
@@ -272,7 +272,7 @@ export const StylePanel: React.FC = () => {
               </div>
 
               {/* Stroke Page Navigation Dots */}
-              <div className="flex items-center justify-between text-[10px] px-0.5 text-neutral-500 font-medium">
+              <div className="flex items-center justify-between text-[10px] px-0.5 text-neutral-300 font-medium">
                 <button
                   onClick={() => setStrokePage((prev) => (prev > 0 ? prev - 1 : 2))}
                   className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
@@ -297,7 +297,7 @@ export const StylePanel: React.FC = () => {
 
                 <button
                   onClick={() => setStrokePage((prev) => (prev < 2 ? prev + 1 : 0))}
-                  className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
+                  className="p-0.5 hover:text-neutral-100 transition flex items-center gap-0.5"
                 >
                   <span>След.</span>
                   <ArrowRightIcon className="w-2.5 h-2.5" />
@@ -331,7 +331,7 @@ export const StylePanel: React.FC = () => {
                 </div>
 
                 {/* 16 Fill Colors Grid */}
-                <div className="grid grid-cols-8 gap-1 p-1 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/70">
+                <div className="grid grid-cols-8 gap-1 p-1.5 rounded-xl bg-neutral-100/60 dark:bg-neutral-800/60 border border-neutral-200/50 dark:border-neutral-700/50 backdrop-blur-md">
                   {FILL_COLOR_PAGES[fillPage].map((color, idx) => {
                     const selected = activeStyle.fillColor === color;
                     return (
@@ -360,10 +360,10 @@ export const StylePanel: React.FC = () => {
                 </div>
 
                 {/* Fill Page Navigation Dots */}
-                <div className="flex items-center justify-between text-[10px] px-0.5 text-neutral-500 font-medium">
+                <div className="flex items-center justify-between text-[10px] px-0.5 text-neutral-300 font-medium">
                   <button
                     onClick={() => setFillPage((prev) => (prev > 0 ? prev - 1 : 2))}
-                    className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
+                    className="p-0.5 hover:text-neutral-100 transition flex items-center gap-0.5"
                   >
                     <ArrowLeftIcon className="w-2.5 h-2.5" />
                     <span>Пред.</span>

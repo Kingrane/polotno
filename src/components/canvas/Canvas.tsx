@@ -18,6 +18,11 @@ import {
   ResizeHandle,
   ElementType,
 } from '../../engine/types';
+import {
+  ChalkParticle,
+  spawnChalkDust,
+  updateChalkDust,
+} from '../../engine/chalkDust';
 
 export const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -56,6 +61,29 @@ export const Canvas: React.FC = () => {
   const dragStartPoint = useRef<Point>({ x: 0, y: 0 });
   const elementStartStates = useRef<Map<string, CanvasElement>>(new Map());
   const spaceKeyPressed = useRef(false);
+
+  // Chalk dust (chalkboard theme only) — kept in refs to avoid React re-render every frame
+  const chalkParticlesRef = useRef<ChalkParticle[]>([]);
+  const chalkRafRef = useRef<number | null>(null);
+  const chalkLastTsRef = useRef<number>(0);
+  const lastDustPointRef = useRef<Point | null>(null);
+  // Mirror latest render inputs for the dust rAF loop
+  const renderSnapshotRef = useRef({
+    elements,
+    currentElement,
+    selectedElementIds,
+    viewport,
+    theme,
+    marqueeBox,
+  });
+  renderSnapshotRef.current = {
+    elements,
+    currentElement,
+    selectedElementIds,
+    viewport,
+    theme,
+    marqueeBox,
+  };
 
   // Initial Load & Window Resize
   useEffect(() => {
@@ -201,13 +229,93 @@ export const Canvas: React.FC = () => {
       selectedElementIds,
       viewport,
       theme,
-      marqueeBox
+      marqueeBox,
+      theme === 'chalkboard' ? chalkParticlesRef.current : null
     );
   }, [elements, currentElement, selectedElementIds, viewport, theme, marqueeBox]);
 
   useEffect(() => {
     triggerRender();
   }, [triggerRender]);
+
+  /** Keep chalk dust animating until all particles die. */
+  const ensureChalkLoop = useCallback(() => {
+    if (chalkRafRef.current !== null) return;
+
+    chalkLastTsRef.current = performance.now();
+
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - chalkLastTsRef.current) / 1000);
+      chalkLastTsRef.current = now;
+
+      updateChalkDust(chalkParticlesRef.current, dt);
+
+      const snap = renderSnapshotRef.current;
+      if (canvasRef.current) {
+        const allElements = snap.currentElement
+          ? [...snap.elements, snap.currentElement]
+          : snap.elements;
+        renderScene(
+          canvasRef.current,
+          allElements,
+          snap.selectedElementIds,
+          snap.viewport,
+          snap.theme,
+          snap.marqueeBox,
+          snap.theme === 'chalkboard' ? chalkParticlesRef.current : null
+        );
+      }
+
+      if (chalkParticlesRef.current.length > 0 && snap.theme === 'chalkboard') {
+        chalkRafRef.current = requestAnimationFrame(tick);
+      } else {
+        chalkRafRef.current = null;
+        // One final clean frame without dust if theme changed mid-flight
+        if (chalkParticlesRef.current.length > 0 && snap.theme !== 'chalkboard') {
+          chalkParticlesRef.current = [];
+        }
+      }
+    };
+
+    chalkRafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  // Clear dust when leaving chalkboard
+  useEffect(() => {
+    if (theme !== 'chalkboard') {
+      chalkParticlesRef.current = [];
+      if (chalkRafRef.current !== null) {
+        cancelAnimationFrame(chalkRafRef.current);
+        chalkRafRef.current = null;
+      }
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    return () => {
+      if (chalkRafRef.current !== null) {
+        cancelAnimationFrame(chalkRafRef.current);
+      }
+    };
+  }, []);
+
+  const emitDust = useCallback(
+    (worldPt: Point, color: string, intensity = 1, count?: number) => {
+      if (theme !== 'chalkboard') return;
+
+      // Throttle by distance so fast strokes still look dense, slow ones aren't a cloud
+      const last = lastDustPointRef.current;
+      if (last) {
+        const dist = Math.hypot(worldPt.x - last.x, worldPt.y - last.y);
+        if (dist < 2.5 / Math.max(viewport.zoom, 0.25)) return;
+      }
+      lastDustPointRef.current = worldPt;
+
+      spawnChalkDust(chalkParticlesRef.current, worldPt.x, worldPt.y, color, intensity, count);
+      ensureChalkLoop();
+    },
+    [theme, viewport.zoom, ensureChalkLoop]
+  );
 
   // Pointer Down
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -329,6 +437,7 @@ export const Canvas: React.FC = () => {
     // Shape Creation
     setIsDrawing(true);
     dragStartPoint.current = worldPt;
+    lastDustPointRef.current = null;
 
     const newElement: CanvasElement = {
       id: Math.random().toString(36).substr(2, 9),
@@ -349,6 +458,20 @@ export const Canvas: React.FC = () => {
       isHanddrawn: activeStyle.isHanddrawn,
       seed: Math.floor(Math.random() * 2 ** 31),
     };
+
+    // Initial chalk contact puff
+    if (theme === 'chalkboard' && (tool as string) !== 'select' && (tool as string) !== 'hand' && (tool as string) !== 'text') {
+      spawnChalkDust(
+        chalkParticlesRef.current,
+        worldPt.x,
+        worldPt.y,
+        activeStyle.strokeColor,
+        (tool as string) === 'eraser' ? 1.4 : 0.9,
+        (tool as string) === 'eraser' ? 6 : 5
+      );
+      lastDustPointRef.current = worldPt;
+      ensureChalkLoop();
+    }
 
     setCurrentElement(newElement);
   };
@@ -446,6 +569,8 @@ export const Canvas: React.FC = () => {
     }
 
     if (tool === 'eraser' && isDrawing) {
+      // Eraser scrapes the board — denser chalk cloud
+      emitDust(worldPt, '#ffffff', 1.6, 4);
       eraseAtPoint(worldPt);
       return;
     }
@@ -466,6 +591,12 @@ export const Canvas: React.FC = () => {
 
     if (isDrawing && currentElement) {
       if (currentElement.type === 'pencil') {
+        // Primary chalk dust along freehand stroke
+        emitDust(
+          worldPt,
+          currentElement.strokeColor,
+          0.7 + currentElement.strokeWidth * 0.12
+        );
         setCurrentElement({
           ...currentElement,
           points: [...(currentElement.points || []), worldPt],
@@ -479,6 +610,14 @@ export const Canvas: React.FC = () => {
           w = w < 0 ? -maxDim : maxDim;
           h = h < 0 ? -maxDim : maxDim;
         }
+
+        // Light dust at the growing corner / tip of shapes
+        emitDust(
+          { x: currentElement.x + w, y: currentElement.y + h },
+          currentElement.strokeColor,
+          0.45,
+          2
+        );
 
         setCurrentElement({
           ...currentElement,
@@ -524,10 +663,31 @@ export const Canvas: React.FC = () => {
         bounds.width > 3 ||
         bounds.height > 3
       ) {
+        // Soft settle-burst when lifting the chalk
+        if (theme === 'chalkboard') {
+          const tipX =
+            currentElement.type === 'pencil' && currentElement.points?.length
+              ? currentElement.points[currentElement.points.length - 1].x
+              : currentElement.x + currentElement.width;
+          const tipY =
+            currentElement.type === 'pencil' && currentElement.points?.length
+              ? currentElement.points[currentElement.points.length - 1].y
+              : currentElement.y + currentElement.height;
+          spawnChalkDust(
+            chalkParticlesRef.current,
+            tipX,
+            tipY,
+            currentElement.strokeColor,
+            1.2,
+            8
+          );
+          ensureChalkLoop();
+        }
         addElement(currentElement);
       }
       setCurrentElement(null);
       setIsDrawing(false);
+      lastDustPointRef.current = null;
 
       if (tool !== 'pencil' && tool !== 'text') {
         setTool('select');
@@ -535,6 +695,7 @@ export const Canvas: React.FC = () => {
     }
 
     setIsDrawing(false);
+    lastDustPointRef.current = null;
   };
 
   const eraseAtPoint = (worldPt: Point) => {

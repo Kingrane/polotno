@@ -129,7 +129,7 @@ export const Toolbar: React.FC = () => {
       initial={{ opacity: 0, y: 18, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={springs.soft}
-      className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-24px)] overflow-x-auto scrollbar-none p-1.5 sm:p-2 rounded-3xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-2xl border border-white/60 dark:border-neutral-800 shadow-2xl shadow-black/10 flex items-center gap-1 sm:gap-1.5 touch-manipulation"
+      className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-24px)] overflow-x-auto scrollbar-none p-1.5 sm:p-2 rounded-3xl bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border border-white/60 dark:border-neutral-800/60 shadow-2xl shadow-black/10 flex items-center gap-1 sm:gap-1.5 touch-manipulation"
     >
       <LayoutGroup id="toolbar-tools">
         {tools.map((t, index) => {

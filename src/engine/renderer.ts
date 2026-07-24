@@ -5,6 +5,7 @@ import {
   getCombinedBounds,
   getFreehandPathData,
 } from './math';
+import { ChalkParticle, renderChalkDust } from './chalkDust';
 
 /**
  * Main renderer for drawing the entire canvas scene.
@@ -15,7 +16,8 @@ export function renderScene(
   selectedIds: string[],
   viewport: Viewport,
   theme: BoardTheme,
-  marqueeBox: SelectionBox | null
+  marqueeBox: SelectionBox | null,
+  chalkParticles: ChalkParticle[] | null = null
 ) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -40,6 +42,11 @@ export function renderScene(
   // 3. Render Canvas Elements
   for (const element of elements) {
     renderElement(ctx, rc, element, theme);
+  }
+
+  // 3b. Chalk dust particles (chalkboard only, world-space)
+  if (theme === 'chalkboard' && chalkParticles && chalkParticles.length > 0) {
+    renderChalkDust(ctx, chalkParticles);
   }
 
   // 4. Render Selection Box & Handles
