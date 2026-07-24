@@ -358,7 +358,7 @@ export const TopNav: React.FC = () => {
             <motion.button
               {...pressable}
               onClick={() => setIsAuthOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 font-extrabold text-[11px] transition min-h-[32px]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-900 font-extrabold text-[11px] transition min-h-[32px]"
               title={user ? user.email : 'Войти в аккаунт'}
             >
               <UserIcon className="w-3 h-3 text-blue-600" />
