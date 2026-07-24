@@ -19,15 +19,13 @@ import {
   Crown,
   Menu,
   X,
+  User as UserIcon,
 } from 'lucide-react';
 import { ExportModal } from './ExportModal';
 import { ShareModal } from './ShareModal';
 import { ProModal } from './ProModal';
-import {
-  dropdownVariants,
-  springs,
-  pressable,
-} from '../../lib/motion';
+import { AuthModal } from './AuthModal';
+import { springs, pressable } from '../../lib/motion';
 
 export const TopNav: React.FC = () => {
   const {
@@ -41,12 +39,15 @@ export const TopNav: React.FC = () => {
     history,
     importJSON,
     clearCanvas,
+    isPro,
+    user,
   } = useCanvasStore();
 
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isProOpen, setIsProOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const zoomPercent = Math.round(viewport.zoom * 100);
@@ -61,6 +62,7 @@ export const TopNav: React.FC = () => {
     { id: 'chalkboard', label: 'Меловая доска (Chalk)', icon: '🟢' },
   ];
 
+  // Global Keyboard Shortcuts for Zooming (Ctrl + / Ctrl - / Ctrl 0)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -123,25 +125,27 @@ export const TopNav: React.FC = () => {
     }
   };
 
+  // Compact design styles for top controls
   const island =
-    'flex items-center gap-1 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 p-1.5 rounded-2xl';
+    'flex items-center gap-1.5 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-lg p-2 rounded-xl';
 
   const iconBtn =
-    'p-2 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent min-w-[36px] min-h-[36px] flex items-center justify-center';
+    'p-1.5 rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent min-w-[32px] min-h-[32px] flex items-center justify-center transition';
 
   return (
     <>
-      <header className="fixed top-3 sm:top-5 left-3 sm:left-6 right-3 sm:right-6 z-50 flex items-center justify-between pointer-events-none">
-        {/* Branding */}
+      <header className="fixed top-3 sm:top-4 left-3 sm:left-5 right-3 sm:right-5 z-50 flex items-center justify-between pointer-events-none">
+        {/* Branding - Keep polotno logo nice and large */}
         <motion.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={springs.soft}
-          className="pointer-events-auto flex items-center gap-3"
+          className="pointer-events-auto flex items-center gap-2 sm:gap-3"
         >
           <motion.span
             whileHover={{ scale: 1.03 }}
-            className={`font-black text-3xl sm:text-4xl md:text-5xl tracking-tighter select-none transition-colors duration-300 ${
+            onClick={() => (window.location.href = '/')}
+            className={`font-black text-3xl sm:text-4xl md:text-5xl tracking-tighter select-none cursor-pointer transition-colors duration-300 ${
               isChalkboard ? 'text-white drop-shadow-md' : 'text-[#1d1d1f]'
             }`}
           >
@@ -149,12 +153,12 @@ export const TopNav: React.FC = () => {
           </motion.span>
         </motion.div>
 
-        {/* Desktop controls */}
+        {/* Compact Desktop Controls Header */}
         <motion.div
           initial={{ opacity: 0, y: -12, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ...springs.soft, delay: 0.08 }}
-          className="hidden md:flex items-center gap-2 pointer-events-auto"
+          className="hidden md:flex items-center gap-1.5 pointer-events-auto"
         >
           {/* Undo / Redo */}
           <div className={island}>
@@ -165,7 +169,7 @@ export const TopNav: React.FC = () => {
               className={iconBtn}
               title="Отменить (Ctrl+Z)"
             >
-              <Undo2 className="w-4 h-4" />
+              <Undo2 className="w-3.5 h-3.5" />
             </motion.button>
             <motion.button
               {...pressable}
@@ -174,7 +178,7 @@ export const TopNav: React.FC = () => {
               className={iconBtn}
               title="Повторить (Ctrl+Y)"
             >
-              <Redo2 className="w-4 h-4" />
+              <Redo2 className="w-3.5 h-3.5" />
             </motion.button>
           </div>
 
@@ -191,22 +195,21 @@ export const TopNav: React.FC = () => {
               className={iconBtn}
               title="Уменьшить (Ctrl -)"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-3.5 h-3.5" />
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              {...pressable}
               onClick={resetZoom}
-              className="px-2.5 py-1 text-xs font-mono font-bold text-neutral-800 dark:text-neutral-200 hover:text-blue-600 hover:bg-blue-50 rounded-lg min-w-[52px]"
+              className="px-2 py-0.5 text-[11px] font-mono font-bold text-neutral-800 dark:text-neutral-200 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition"
               title="Сбросить масштаб (Ctrl 0)"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={zoomPercent}
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
+                  exit={{ opacity: 0, y: 4 }}
                   transition={{ duration: 0.12 }}
                   className="inline-block"
                 >
@@ -226,26 +229,25 @@ export const TopNav: React.FC = () => {
               className={iconBtn}
               title="Увеличить (Ctrl +)"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-3.5 h-3.5" />
             </motion.button>
           </div>
 
-          {/* Theme */}
+          {/* Theme Dropdown */}
           <div className="relative">
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              {...pressable}
               onClick={() => setIsThemeOpen(!isThemeOpen)}
-              className="flex items-center gap-1.5 text-xs text-neutral-800 dark:text-neutral-200 font-bold px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-xl shadow-black/5 hover:bg-neutral-100 dark:hover:bg-neutral-800 min-h-[40px]"
+              className="flex items-center gap-1.5 text-[11px] text-neutral-800 dark:text-neutral-200 font-extrabold px-3 py-1.5 rounded-xl bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800 shadow-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition min-h-[34px]"
             >
-              <Palette className="w-4 h-4 text-blue-600" />
+              <Palette className="w-3.5 h-3.5 text-blue-600" />
               <span>Тема</span>
-              <motion.span
+              <motion.div
                 animate={{ rotate: isThemeOpen ? 180 : 0 }}
                 transition={springs.snappy}
               >
-                <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
-              </motion.span>
+                <ChevronDown className="w-3 h-3 text-neutral-400" />
+              </motion.div>
             </motion.button>
 
             <AnimatePresence>
@@ -256,58 +258,52 @@ export const TopNav: React.FC = () => {
                     onClick={() => setIsThemeOpen(false)}
                   />
                   <motion.div
-                    variants={dropdownVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    className="absolute top-full right-0 mt-2 z-50 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-2xl p-1.5 w-60 text-xs origin-top-right"
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                    transition={springs.snappy}
+                    className="absolute top-full right-0 mt-2 z-50 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-2xl p-1.5 w-56 text-xs"
                   >
-                    {themes.map((t, i) => (
-                      <motion.button
-                        key={t.id}
-                        initial={{ opacity: 0, x: 8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        whileHover={{ x: 2 }}
-                        onClick={() => {
-                          setTheme(t.id);
-                          setIsThemeOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold relative ${
-                          theme === t.id
-                            ? 'text-white'
-                            : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                        }`}
-                      >
-                        {theme === t.id && (
-                          <motion.span
-                            layoutId="theme-active"
-                            className="absolute inset-0 rounded-xl bg-blue-600 shadow-sm"
-                            transition={springs.snappy}
-                          />
-                        )}
-                        <span className="relative z-10 flex items-center gap-2.5">
-                          <span className="text-sm">{t.icon}</span>
-                          <span>{t.label}</span>
-                        </span>
-                        {t.id === 'chalkboard' && (
-                          <Sparkles className="relative z-10 w-3.5 h-3.5 text-amber-400" />
-                        )}
-                      </motion.button>
-                    ))}
+                    {themes.map((t) => {
+                      const isActive = theme === t.id;
+                      return (
+                        <motion.button
+                          key={t.id}
+                          whileHover={{ x: 2 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setTheme(t.id);
+                            setIsThemeOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left font-semibold transition ${
+                            isActive
+                              ? 'bg-blue-600 text-white shadow-sm font-extrabold'
+                              : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm">{t.icon}</span>
+                            <span>{t.label}</span>
+                          </span>
+                          {t.id === 'chalkboard' && (
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </motion.button>
+                      );
+                    })}
                   </motion.div>
                 </>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Actions */}
-          <div className={island + ' gap-2'}>
+          {/* Import / Clear / Export / Share & Sub */}
+          <div className={island}>
             <label
               className={`${iconBtn} cursor-pointer`}
               title="Импорт файла (.json)"
             >
-              <FolderInput className="w-4 h-4" />
+              <FolderInput className="w-3.5 h-3.5" />
               <input
                 type="file"
                 accept=".json"
@@ -319,148 +315,161 @@ export const TopNav: React.FC = () => {
             <motion.button
               {...pressable}
               onClick={handleClearCanvas}
-              className="p-2 rounded-xl hover:bg-red-50 text-neutral-700 dark:text-neutral-300 min-w-[36px] min-h-[36px] flex items-center justify-center"
+              className={`${iconBtn} hover:bg-red-50 dark:hover:bg-red-950/40`}
               title="Очистить холст"
             >
-              <Trash2 className="w-4 h-4 text-red-500" />
+              <Trash2 className="w-3.5 h-3.5 text-red-500" />
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              {...pressable}
               onClick={() => setIsExportOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 font-bold text-xs shadow-sm min-h-[38px]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 font-extrabold text-[11px] shadow-sm transition min-h-[32px]"
             >
-              <Download className="w-3.5 h-3.5 text-neutral-300" />
+              <Download className="w-3 h-3" />
               <span>Экспорт</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              {...pressable}
               onClick={() => setIsShareOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-500 font-bold text-xs shadow-md min-h-[38px]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 font-extrabold text-[11px] shadow-md transition min-h-[32px]"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="w-3 h-3" />
               <span>Поделиться</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={springs.snappy}
               onClick={() => setIsProOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-extrabold text-xs shadow-lg shadow-amber-500/20 min-h-[38px]"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-white font-black text-[11px] shadow-md transition min-h-[32px] ${
+                isPro
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/20'
+                  : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 shadow-amber-500/20'
+              }`}
             >
-              <Crown className="w-3.5 h-3.5 fill-white" />
-              <span>Подписка 79 ₽</span>
+              <Crown className="w-3 h-3 fill-white" />
+              <span>{isPro ? 'PRO' : '79 ₽'}</span>
+            </motion.button>
+
+            {/* User Account / Auth Button */}
+            <motion.button
+              {...pressable}
+              onClick={() => setIsAuthOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 font-extrabold text-[11px] transition min-h-[32px]"
+              title={user ? user.email : 'Войти в аккаунт'}
+            >
+              <UserIcon className="w-3 h-3 text-blue-600" />
+              <span className="max-w-[70px] truncate">{user ? user.name : 'Войти'}</span>
             </motion.button>
           </div>
         </motion.div>
 
-        {/* Mobile quick controls */}
+        {/* Mobile Controls Header */}
         <motion.div
-          initial={{ opacity: 0, x: 12 }}
+          initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={springs.soft}
           className="flex md:hidden items-center gap-1.5 pointer-events-auto"
         >
           <motion.button
-            whileTap={{ scale: 0.93 }}
+            {...pressable}
             onClick={() => setIsProOpen(true)}
-            className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-[11px] shadow-md min-h-[42px]"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-[11px] shadow-md transition min-h-[36px]"
           >
             <Crown className="w-3.5 h-3.5 fill-white" />
-            <span>79 ₽</span>
+            <span>{isPro ? 'PRO' : '79 ₽'}</span>
           </motion.button>
+
           <motion.button
-            whileTap={{ scale: 0.93 }}
+            {...pressable}
             onClick={() => setIsShareOpen(true)}
-            className="p-2.5 rounded-2xl bg-blue-600 text-white font-bold shadow-md min-w-[42px] min-h-[42px] flex items-center justify-center"
+            className="p-2 rounded-xl bg-blue-600 text-white font-bold shadow-md transition min-w-[36px] min-h-[36px] flex items-center justify-center"
             title="Поделиться"
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-3.5 h-3.5" />
           </motion.button>
+
           <motion.button
-            whileTap={{ scale: 0.93 }}
+            {...pressable}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2.5 rounded-2xl bg-neutral-900/90 text-white backdrop-blur-xl border border-neutral-700 shadow-md min-w-[42px] min-h-[42px] flex items-center justify-center"
+            className="p-2 rounded-xl bg-neutral-900/90 text-white backdrop-blur-xl border border-neutral-700 shadow-md transition min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
             <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={isMobileMenuOpen ? 'x' : 'menu'}
-                initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
+              <motion.div
+                key={isMobileMenuOpen ? 'close' : 'open'}
+                initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
                 animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                exit={{ opacity: 0, rotate: 90, scale: 0.6 }}
-                transition={springs.snappy}
-                className="flex"
+                exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
+                transition={{ duration: 0.15 }}
               >
-                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </motion.span>
+                {isMobileMenuOpen ? (
+                  <X className="w-4 h-4" />
+                ) : (
+                  <Menu className="w-4 h-4" />
+                )}
+              </motion.div>
             </AnimatePresence>
           </motion.button>
         </motion.div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Mobile Drawer Dropdown Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -12, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            exit={{ opacity: 0, y: -10, scale: 0.97 }}
             transition={springs.snappy}
-            className="fixed top-16 left-3 right-3 z-50 md:hidden bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800 text-white shadow-2xl rounded-3xl p-4 text-xs font-semibold space-y-4 pointer-events-auto origin-top"
+            className="fixed top-14 left-3 right-3 z-50 md:hidden bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800 text-white shadow-2xl rounded-3xl p-4 text-xs font-semibold space-y-4 pointer-events-auto"
           >
             <div className="flex items-center justify-between p-2.5 rounded-2xl bg-neutral-900 border border-neutral-800">
               <div className="flex items-center gap-1">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={undo}
                   disabled={history.past.length === 0}
-                  className="p-2.5 rounded-xl bg-neutral-800 text-white disabled:opacity-30"
-                  title="Отменить"
+                  className="p-2.5 rounded-xl bg-neutral-800 text-white disabled:opacity-30 active:scale-95 transition"
                 >
                   <Undo2 className="w-4 h-4" />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                </button>
+                <button
                   onClick={redo}
                   disabled={history.future.length === 0}
-                  className="p-2.5 rounded-xl bg-neutral-800 text-white disabled:opacity-30"
-                  title="Повторить"
+                  className="p-2.5 rounded-xl bg-neutral-800 text-white disabled:opacity-30 active:scale-95 transition"
                 >
                   <Redo2 className="w-4 h-4" />
-                </motion.button>
+                </button>
               </div>
 
               <div className="flex items-center gap-2">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() =>
                     zoomAtPoint(0.85, {
                       x: window.innerWidth / 2,
                       y: window.innerHeight / 2,
                     })
                   }
-                  className="p-2 rounded-xl bg-neutral-800 text-white"
+                  className="p-2 rounded-xl bg-neutral-800 text-white active:scale-95 transition"
                 >
                   <ZoomOut className="w-4 h-4" />
-                </motion.button>
+                </button>
                 <span className="font-mono font-extrabold text-sm px-1">
                   {zoomPercent}%
                 </span>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() =>
                     zoomAtPoint(1.15, {
                       x: window.innerWidth / 2,
                       y: window.innerHeight / 2,
                     })
                   }
-                  className="p-2 rounded-xl bg-neutral-800 text-white"
+                  className="p-2 rounded-xl bg-neutral-800 text-white active:scale-95 transition"
                 >
                   <ZoomIn className="w-4 h-4" />
-                </motion.button>
+                </button>
               </div>
             </div>
 
@@ -470,22 +479,21 @@ export const TopNav: React.FC = () => {
               </label>
               <div className="grid grid-cols-2 gap-1.5">
                 {themes.map((t) => (
-                  <motion.button
+                  <button
                     key={t.id}
-                    whileTap={{ scale: 0.96 }}
                     onClick={() => {
                       setTheme(t.id);
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`p-2.5 rounded-xl text-left flex items-center gap-2 font-bold text-xs ${
+                    className={`p-2.5 rounded-xl text-left flex items-center gap-2 font-bold transition text-xs ${
                       theme === t.id
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'bg-blue-600 text-white shadow-md font-extrabold'
                         : 'bg-neutral-900 border border-neutral-800 text-neutral-200'
                     }`}
                   >
                     <span className="text-sm">{t.icon}</span>
                     <span className="truncate">{t.label}</span>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
@@ -502,34 +510,40 @@ export const TopNav: React.FC = () => {
                 />
               </label>
 
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={handleClearCanvas}
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-red-950/60 border border-red-900/60 text-red-400 font-bold"
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-red-950/60 border border-red-900/60 text-red-400 font-bold active:scale-95 transition"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Очистить</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => {
                   setIsExportOpen(true);
                   setIsMobileMenuOpen(false);
                 }}
-                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-blue-600 text-white font-bold"
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-blue-600 text-white font-bold active:scale-95 transition"
               >
                 <Download className="w-4 h-4" />
                 <span>Экспорт</span>
-              </motion.button>
+              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
-      <ShareModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} />
+      {/* Modals */}
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+      />
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+      />
       <ProModal isOpen={isProOpen} onClose={() => setIsProOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </>
   );
 };

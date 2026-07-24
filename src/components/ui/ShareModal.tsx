@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, Lock, Link2 } from 'lucide-react';
+import { X, Copy, Check, Lock, Link2, Users, Globe, Sparkles } from 'lucide-react';
 import { backdropVariants, modalVariants, springs } from '../../lib/motion';
+import { useCanvasStore } from '../../store/useCanvasStore';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -11,19 +12,42 @@ interface ShareModalProps {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
+  const { currentBoardId, createNewCloudBoard } = useCanvasStore();
   const [copied, setCopied] = useState(false);
-  const [accessRole, setAccessRole] = useState<'edit' | 'view'>('edit');
+  const [accessMode, setAccessMode] = useState<'private' | 'shared'>(
+    currentBoardId ? 'shared' : 'private'
+  );
+  const [loading, setLoading] = useState(false);
 
-  const currentUrl =
-    typeof window !== 'undefined' ? window.location.href : 'https://polotno.app/board/demo';
+  const boardUrl = currentBoardId
+    ? typeof window !== 'undefined'
+      ? `${window.location.origin}/board/${currentBoardId}`
+      : `https://polotno.app/board/${currentBoardId}`
+    : typeof window !== 'undefined'
+    ? window.location.href
+    : 'https://polotno.app';
+
+  const handleEnableSharedBoard = async () => {
+    if (!currentBoardId) {
+      setLoading(true);
+      const newId = await createNewCloudBoard();
+      setLoading(false);
+      if (newId) {
+        setAccessMode('shared');
+        window.history.pushState({}, '', `/board/${newId}`);
+      }
+    } else {
+      setAccessMode('shared');
+    }
+  };
 
   const handleCopyLink = async () => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(currentUrl);
+        await navigator.clipboard.writeText(boardUrl);
       } else {
         const textArea = document.createElement('textarea');
-        textArea.value = currentUrl;
+        textArea.value = boardUrl;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
@@ -57,7 +81,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
 
           <motion.div
             variants={modalVariants}
-            className="relative bg-white dark:bg-neutral-900 border border-white/60 dark:border-neutral-800 rounded-3xl p-6 w-full max-w-md shadow-2xl text-neutral-900 dark:text-neutral-100"
+            className="relative bg-white dark:bg-neutral-900 border border-white/60 dark:border-neutral-800 rounded-3xl p-6 w-full max-w-md shadow-2xl text-neutral-900 dark:text-neutral-100 z-10"
           >
             <motion.button
               whileHover={{ scale: 1.08, rotate: 90 }}
@@ -78,46 +102,67 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
               <Link2 className="w-5 h-5" />
               <h3 className="text-lg font-extrabold tracking-tight">Поделиться доской</h3>
             </motion.div>
-            <p className="text-xs text-neutral-500 mb-6">
-              Любой человек с этой ссылкой сможет сразу открыть доску без регистрации.
+            <p className="text-xs text-neutral-500 mb-5">
+              Настройте параметры доступа для вашей доски.
             </p>
 
             <div className="space-y-4">
+              {/* Access Mode Switcher */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                  Права доступа по ссылке
+                  Режим доступа
                 </label>
-                <div className="relative grid grid-cols-2 gap-2 bg-neutral-100 dark:bg-neutral-800 p-1.5 rounded-2xl">
-                  {(['edit', 'view'] as const).map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => setAccessRole(role)}
-                      className={`relative py-2 rounded-xl text-xs font-extrabold transition min-h-[38px] z-10 ${
-                        accessRole === role
-                          ? 'text-blue-600'
-                          : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-                      }`}
-                    >
-                      {accessRole === role && (
-                        <motion.span
-                          layoutId="share-access-pill"
-                          className="absolute inset-0 rounded-xl bg-white dark:bg-neutral-700 shadow-sm"
-                          transition={springs.snappy}
-                        />
-                      )}
-                      <span className="relative z-10">
-                        {role === 'edit' ? 'Может редактировать' : 'Только просмотр'}
-                      </span>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-2 bg-neutral-100 dark:bg-neutral-800 p-1.5 rounded-2xl">
+                  <button
+                    onClick={() => setAccessMode('private')}
+                    className={`py-2 rounded-xl text-xs font-extrabold transition min-h-[38px] flex items-center justify-center gap-1.5 ${
+                      accessMode === 'private'
+                        ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Приватная</span>
+                  </button>
+
+                  <button
+                    onClick={handleEnableSharedBoard}
+                    disabled={loading}
+                    className={`py-2 rounded-xl text-xs font-extrabold transition min-h-[38px] flex items-center justify-center gap-1.5 ${
+                      accessMode === 'shared'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{loading ? 'Создание...' : 'Открыто для соавторов'}</span>
+                  </button>
                 </div>
               </div>
 
+              {/* Status explanation */}
+              {accessMode === 'shared' ? (
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs space-y-1">
+                  <div className="font-extrabold flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Открыто для быстрой совместной работы</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300 opacity-90">
+                    Любой человек по этой ссылке может сразу рисовать вместе с вами. Виджет облачного сохранения активирован внизу справа!
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-xs">
+                  Доска находится в вашей локальной памяти браузера. Выберите «Открыто для соавторов», чтобы сгенерировать облачную ссылку.
+                </div>
+              )}
+
+              {/* Copy Link Input */}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
-                  value={currentUrl}
+                  value={boardUrl}
                   className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono text-neutral-700 dark:text-neutral-300 outline-none"
                 />
                 <motion.button
@@ -145,15 +190,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 </motion.button>
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ ...springs.soft, delay: 0.12 }}
-                className="mt-4 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-xs space-y-1.5"
-              >
+              {/* Pro Feature Teaser */}
+              <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-xs space-y-1.5">
                 <div className="flex items-center justify-between font-extrabold text-amber-800 dark:text-amber-400">
                   <span className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5" />
+                    <Sparkles className="w-3.5 h-3.5" />
                     Защита паролем & Срок действия
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wide">
@@ -161,10 +202,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                   </span>
                 </div>
                 <p className="text-amber-900/70 dark:text-amber-300/70 text-[11px] leading-relaxed">
-                  В подписке Pro можно ставить пароли на ссылки досок и ограничивать время жизни
-                  доступа для клиентов.
+                  В подписке Pro можно ставить пароль на ссылку доски и ограничивать время доступа для клиентов.
                 </p>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         </motion.div>

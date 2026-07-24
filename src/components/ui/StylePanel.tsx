@@ -14,6 +14,7 @@ import {
   ChevronsDown,
   Sparkles,
   Lock,
+  Pipette,
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
@@ -95,6 +96,7 @@ export const StylePanel: React.FC = () => {
     sendBackward,
     bringToFront,
     sendToBack,
+    isPro,
   } = useCanvasStore();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -226,15 +228,28 @@ export const StylePanel: React.FC = () => {
                   </span>
                 </label>
 
-                {/* Custom Color Pro Button */}
-                <button
-                  onClick={() => setIsProModalOpen(true)}
-                  className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-extrabold bg-amber-500/10 hover:bg-amber-500/20 px-1.5 py-0.5 rounded-lg border border-amber-500/20 transition"
-                >
-                  <Lock className="w-2.5 h-2.5 text-amber-500" />
-                  <span>Свой цвет</span>
-                  <span className="text-[8px] bg-amber-500 text-white px-1 rounded font-bold">PRO</span>
-                </button>
+                {/* Custom Color Pro Button / Unlocked Color Picker */}
+                {isPro ? (
+                  <label className="relative flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-0.5 rounded-lg border border-emerald-500/20 cursor-pointer transition">
+                    <Pipette className="w-3 h-3 text-emerald-500" />
+                    <span>Свой цвет</span>
+                    <input
+                      type="color"
+                      value={activeStyle.strokeColor}
+                      onChange={(e) => setActiveStyle({ strokeColor: e.target.value })}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                  </label>
+                ) : (
+                  <button
+                    onClick={() => setIsProModalOpen(true)}
+                    className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-extrabold bg-amber-500/10 hover:bg-amber-500/20 px-1.5 py-0.5 rounded-lg border border-amber-500/20 transition"
+                  >
+                    <Lock className="w-2.5 h-2.5 text-amber-500" />
+                    <span>Свой цвет</span>
+                    <span className="text-[8px] bg-amber-500 text-white px-1 rounded font-bold">PRO</span>
+                  </button>
+                )}
               </div>
 
               {/* 16 Colors Grid (8x2) */}

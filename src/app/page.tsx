@@ -6,6 +6,7 @@ import { TopNav } from '../components/ui/TopNav';
 import { Toolbar } from '../components/ui/Toolbar';
 import { StylePanel } from '../components/ui/StylePanel';
 import { EmptyHint } from '../components/ui/EmptyHint';
+import { CloudBoardWidget } from '../components/ui/CloudBoardWidget';
 
 export default function Home() {
   return (
@@ -27,6 +28,9 @@ export default function Home() {
 
       {/* Floating Bottom Center Toolbar */}
       <Toolbar />
+
+      {/* Floating Bottom Right Cloud Board Widget */}
+      <CloudBoardWidget />
     </main>
   );
 }

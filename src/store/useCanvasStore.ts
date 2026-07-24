@@ -23,6 +23,13 @@ const DEFAULT_STYLE: StyleOptions = {
   isHanddrawn: true,
 };
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  isPro: boolean;
+}
+
 interface CanvasStoreState {
   elements: CanvasElement[];
   selectedElementIds: string[];
@@ -30,6 +37,12 @@ interface CanvasStoreState {
   tool: ToolType;
   theme: BoardTheme;
   activeStyle: StyleOptions;
+  currentBoardId: string | null;
+  boardTitle: string;
+  isSyncing: boolean;
+  isPro: boolean;
+  user: UserProfile | null;
+
   history: {
     past: CanvasElement[][];
     future: CanvasElement[][];
@@ -58,23 +71,31 @@ interface CanvasStoreState {
   zoomAtPoint: (zoomFactor: number, centerPoint: Point) => void;
   resetZoom: () => void;
 
-  // Tool & Theme
+  // Tool & Theme & Title & Pro
   setTool: (tool: ToolType) => void;
   setTheme: (theme: BoardTheme) => void;
+  setBoardTitle: (title: string) => void;
   setActiveStyle: (styleUpdates: Partial<StyleOptions>) => void;
+  setUser: (user: UserProfile | null) => void;
+  activateProWithCode: (code: string) => { success: boolean; isNowPro: boolean; message: string };
 
   // History Undo/Redo
   saveSnapshot: () => void;
   undo: () => void;
   redo: () => void;
 
-  // Storage & Export/Import
+  // Cloud & Local Storage
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => void;
+  loadBoardFromCloud: (boardId: string) => Promise<boolean>;
+  saveBoardToCloud: () => Promise<void>;
+  createNewCloudBoard: () => Promise<string | null>;
   exportJSON: () => string;
   importJSON: (jsonString: string) => boolean;
   clearCanvas: () => void;
 }
+
+let syncTimeout: NodeJS.Timeout | null = null;
 
 export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   elements: [],
@@ -83,6 +104,11 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   tool: 'pencil',
   theme: 'whiteboard',
   activeStyle: DEFAULT_STYLE,
+  currentBoardId: null,
+  boardTitle: 'Новая доска',
+  isSyncing: false,
+  isPro: false,
+  user: null,
   history: {
     past: [],
     future: [],
@@ -91,6 +117,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   setElements: (elements) => {
     set({ elements });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   addElement: (element) => {
@@ -99,6 +126,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       elements: [...state.elements, element],
     }));
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   updateElement: (id, updates) => {
@@ -108,6 +136,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       ),
     }));
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   updateSelectedElements: (updates) => {
@@ -122,6 +151,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       activeStyle: { ...state.activeStyle, ...updates },
     }));
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   deleteSelectedElements: () => {
@@ -134,6 +164,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       selectedElementIds: [],
     }));
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   setSelectedElementIds: (ids) => set({ selectedElementIds: ids }),
@@ -164,6 +195,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       selectedElementIds: newEls.map((el) => el.id),
     }));
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   bringForward: () => {
@@ -181,6 +213,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     }
     set({ elements: newElements });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   sendBackward: () => {
@@ -198,6 +231,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     }
     set({ elements: newElements });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   bringToFront: () => {
@@ -209,6 +243,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     const unselected = elements.filter((el) => !selectedElementIds.includes(el.id));
     set({ elements: [...unselected, ...selected] });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   sendToBack: () => {
@@ -220,6 +255,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     const unselected = elements.filter((el) => !selectedElementIds.includes(el.id));
     set({ elements: [...selected, ...unselected] });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   setViewport: (viewport) => {
@@ -274,13 +310,49 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     }
   },
 
-  setTheme: (theme) => set({ theme }),
+  setTheme: (theme) => {
+    set({ theme });
+    get().saveToLocalStorage();
+    get().saveBoardToCloud();
+  },
+
+  setBoardTitle: (title) => {
+    set({ boardTitle: title });
+    get().saveBoardToCloud();
+  },
 
   setActiveStyle: (styleUpdates) => {
     set((state) => ({
       activeStyle: { ...state.activeStyle, ...styleUpdates },
     }));
     get().updateSelectedElements(styleUpdates);
+  },
+
+  setUser: (user) => {
+    set({ user, isPro: user?.isPro || get().isPro });
+  },
+
+  activateProWithCode: (code: string) => {
+    const cleanCode = code.trim().toLowerCase();
+    if (cleanCode === 'arbuz') {
+      const nextProState = !get().isPro;
+      set({ isPro: nextProState });
+      try {
+        localStorage.setItem('polotno_is_pro', JSON.stringify(nextProState));
+      } catch {}
+      return {
+        success: true,
+        isNowPro: nextProState,
+        message: nextProState
+          ? '🎉 Секретный код "arbuz" принят! Pro-подписка активирована!'
+          : 'Секретный код "arbuz" введён повторно. Pro-подписка отключена.',
+      };
+    }
+    return {
+      success: false,
+      isNowPro: get().isPro,
+      message: 'Неверный секретный код.',
+    };
   },
 
   saveSnapshot: () => {
@@ -308,6 +380,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       selectedElementIds: [],
     });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   redo: () => {
@@ -326,15 +399,17 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
       selectedElementIds: [],
     });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 
   saveToLocalStorage: () => {
     try {
-      const { elements, theme } = get();
+      const { elements, theme, currentBoardId, boardTitle, isPro } = get();
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ elements, theme, updatedAt: new Date().toISOString() })
+        JSON.stringify({ elements, theme, currentBoardId, boardTitle, isPro, updatedAt: new Date().toISOString() })
       );
+      localStorage.setItem('polotno_is_pro', JSON.stringify(isPro));
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
     }
@@ -351,18 +426,116 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
         if (parsed.theme) {
           set({ theme: parsed.theme });
         }
+        if (parsed.currentBoardId) {
+          set({ currentBoardId: parsed.currentBoardId });
+        }
+        if (parsed.boardTitle) {
+          set({ boardTitle: parsed.boardTitle });
+        }
+      }
+      const savedPro = localStorage.getItem('polotno_is_pro');
+      if (savedPro) {
+        set({ isPro: JSON.parse(savedPro) });
       }
     } catch (e) {
       console.error('Failed to load from localStorage:', e);
     }
   },
 
+  loadBoardFromCloud: async (boardId: string) => {
+    try {
+      set({ isSyncing: true, currentBoardId: boardId });
+      const res = await fetch(`/api/boards/${boardId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.board) {
+          set({
+            elements: data.board.elements || [],
+            theme: data.board.theme || 'whiteboard',
+            boardTitle: data.board.title || 'Доска',
+            viewport: data.board.viewport || { x: 0, y: 0, zoom: 1 },
+            selectedElementIds: [],
+            isSyncing: false,
+          });
+          get().saveToLocalStorage();
+          return true;
+        }
+      }
+      set({ isSyncing: false });
+    } catch (err) {
+      console.error('Cloud load failed:', err);
+      set({ isSyncing: false });
+    }
+    return false;
+  },
+
+  saveBoardToCloud: async () => {
+    const { currentBoardId, elements, theme, boardTitle, viewport } = get();
+    if (!currentBoardId) return;
+
+    if (syncTimeout) clearTimeout(syncTimeout);
+
+    syncTimeout = setTimeout(async () => {
+      try {
+        set({ isSyncing: true });
+        await fetch(`/api/boards/${currentBoardId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: boardTitle,
+            theme,
+            elements,
+            viewport,
+          }),
+        });
+        set({ isSyncing: false });
+      } catch (err) {
+        console.error('Cloud save failed:', err);
+        set({ isSyncing: false });
+      }
+    }, 800); // 800ms debounce
+  },
+
+  createNewCloudBoard: async () => {
+    try {
+      set({ isSyncing: true });
+      const { elements, theme, boardTitle, viewport } = get();
+
+      const res = await fetch('/api/boards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: boardTitle || 'Новая доска',
+          theme,
+          elements,
+          viewport,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.boardId) {
+          set({ currentBoardId: data.boardId, isSyncing: false });
+          get().saveToLocalStorage();
+          return data.boardId;
+        }
+      }
+      set({ isSyncing: false });
+    } catch (err) {
+      console.error('Create cloud board failed:', err);
+      set({ isSyncing: false });
+    }
+    return null;
+  },
+
   exportJSON: () => {
-    const { elements, theme } = get();
+    const { elements, theme, currentBoardId, boardTitle } = get();
     return JSON.stringify(
       {
         type: 'polotno-scene',
         version: 1,
+        boardId: currentBoardId,
+        title: boardTitle,
         createdAt: new Date().toISOString(),
         theme,
         elements,
@@ -380,9 +553,11 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
         set({
           elements: data.elements,
           theme: data.theme || 'whiteboard',
+          boardTitle: data.title || 'Импортированная доска',
           selectedElementIds: [],
         });
         get().saveToLocalStorage();
+        get().saveBoardToCloud();
         return true;
       }
     } catch (e) {
@@ -395,5 +570,6 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     get().saveSnapshot();
     set({ elements: [], selectedElementIds: [] });
     get().saveToLocalStorage();
+    get().saveBoardToCloud();
   },
 }));
