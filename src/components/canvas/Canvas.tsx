@@ -123,6 +123,72 @@ export const Canvas: React.FC = () => {
     return () => canvas.removeEventListener('wheel', handleNativeWheel);
   }, [zoomAtPoint, pan]);
 
+  // Native Multi-Touch Event Listener for Mobile Pinch-to-Zoom & 2-finger Panning
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    let initialDistance = 0;
+    let initialCenter: Point = { x: 0, y: 0 };
+    let isTouchScaling = false;
+
+    const getDistance = (t1: Touch, t2: Touch) => {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    };
+
+    const getCenter = (t1: Touch, t2: Touch): Point => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    });
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        isTouchScaling = true;
+        initialDistance = getDistance(e.touches[0], e.touches[1]);
+        initialCenter = getCenter(e.touches[0], e.touches[1]);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && isTouchScaling) {
+        e.preventDefault();
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const currentCenter = getCenter(e.touches[0], e.touches[1]);
+
+        if (initialDistance > 0 && currentDistance > 0) {
+          const zoomFactor = currentDistance / initialDistance;
+          zoomAtPoint(zoomFactor, currentCenter);
+          initialDistance = currentDistance;
+        }
+
+        const deltaX = currentCenter.x - initialCenter.x;
+        const deltaY = currentCenter.y - initialCenter.y;
+        if (Math.hypot(deltaX, deltaY) > 1) {
+          pan(deltaX, deltaY);
+          initialCenter = currentCenter;
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        isTouchScaling = false;
+        initialDistance = 0;
+      }
+    };
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [zoomAtPoint, pan]);
+
   // Main Render Loop
   const triggerRender = useCallback(() => {
     if (!canvasRef.current) return;
@@ -233,15 +299,15 @@ export const Canvas: React.FC = () => {
       return;
     }
 
-    // Text Tool
+    // Text Tool - Single click creates text & opens text editor cleanly
     if (tool === 'text') {
       const newTextEl: CanvasElement = {
         id: Math.random().toString(36).substr(2, 9),
         type: 'text',
         x: worldPt.x,
         y: worldPt.y,
-        width: 160,
-        height: 36,
+        width: 180,
+        height: 40,
         text: '',
         fontSize: activeStyle.fontSize,
         fontFamily: activeStyle.fontFamily,
@@ -257,7 +323,6 @@ export const Canvas: React.FC = () => {
         seed: Math.floor(Math.random() * 2 ** 31),
       };
       setEditingTextElement(newTextEl);
-      setTool('select');
       return;
     }
 
@@ -464,7 +529,7 @@ export const Canvas: React.FC = () => {
       setCurrentElement(null);
       setIsDrawing(false);
 
-      if (tool !== 'pencil') {
+      if (tool !== 'pencil' && tool !== 'text') {
         setTool('select');
       }
     }
@@ -498,8 +563,8 @@ export const Canvas: React.FC = () => {
       type: 'text',
       x: worldPt.x,
       y: worldPt.y,
-      width: 160,
-      height: 36,
+      width: 180,
+      height: 40,
       text: '',
       fontSize: activeStyle.fontSize,
       fontFamily: activeStyle.fontFamily,
@@ -535,7 +600,13 @@ export const Canvas: React.FC = () => {
     <div className="relative w-full h-screen overflow-hidden select-none touch-none bg-neutral-100">
       <canvas
         ref={canvasRef}
-        className="w-full h-full block cursor-crosshair"
+        className={`w-full h-full block ${
+          tool === 'text'
+            ? 'cursor-text'
+            : tool === 'hand'
+            ? 'cursor-grab'
+            : 'cursor-crosshair'
+        }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -571,13 +642,15 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({
 }) => {
   const [text, setText] = useState(element.text || '');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const mountTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
+    mountTimeRef.current = Date.now();
     if (textareaRef.current) {
       textareaRef.current.focus();
       textareaRef.current.select();
     }
-  }, []);
+  }, [element.id]);
 
   const screenX = element.x * viewport.zoom + viewport.x;
   const screenY = element.y * viewport.zoom + viewport.y;
@@ -592,13 +665,27 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({
     }
   };
 
+  const handleBlur = () => {
+    // Ignore initial blur within 350ms caused by canvas pointerup focus steal!
+    if (Date.now() - mountTimeRef.current < 350) {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+      return;
+    }
+    onSave(text);
+  };
+
   return (
     <textarea
       ref={textareaRef}
       value={text}
       onChange={(e) => setText(e.target.value)}
-      onBlur={() => onSave(text)}
+      onBlur={handleBlur}
       onKeyDown={handleKeyDown}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      placeholder="Введите текст..."
       style={{
         position: 'absolute',
         left: `${screenX}px`,
@@ -606,16 +693,17 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({
         fontSize: `${scaledFontSize}px`,
         fontFamily: element.fontFamily || 'Inter, sans-serif',
         color: element.strokeColor,
-        background: 'rgba(255,255,255,0.95)',
+        background: 'rgba(255,255,255,0.98)',
         border: '2px solid #0071E3',
-        borderRadius: '10px',
+        borderRadius: '12px',
         outline: 'none',
         resize: 'both',
-        padding: '4px 8px',
+        padding: '6px 10px',
         lineHeight: 1.2,
-        minWidth: '140px',
+        minWidth: '160px',
         minHeight: '44px',
         zIndex: 50,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
       }}
     />
   );

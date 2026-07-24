@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
+  Type,
   ChevronRight as ArrowRightIcon,
   ChevronLeft as ArrowLeftIcon,
 } from 'lucide-react';
@@ -69,6 +70,14 @@ const FILL_COLOR_PAGES = [
     '#364fc7', '#1864ab', '#0b7285', '#087f5b',
     '#2b8a3e', '#5c940d', '#e67700', '#d9480f',
   ],
+];
+
+const FONTS = [
+  { id: 'Mulish, sans-serif', label: 'Mulish' },
+  { id: 'Geist, sans-serif', label: 'Geist' },
+  { id: 'Inter, sans-serif', label: 'Inter' },
+  { id: 'Caveat, cursive', label: 'Hand' },
+  { id: 'Courier New, monospace', label: 'Mono' },
 ];
 
 export const StylePanel: React.FC = () => {
@@ -140,7 +149,7 @@ export const StylePanel: React.FC = () => {
             )}
           </button>
 
-          {/* Inner Content Container - Compact styling */}
+          {/* Inner Content Container */}
           <div className="w-full max-h-[calc(100vh-140px)] overflow-y-auto bg-white/90 dark:bg-neutral-900/90 backdrop-blur-2xl backdrop-saturate-150 border border-white/60 dark:border-neutral-800 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[22px] p-3 text-xs font-semibold space-y-3">
             
             {/* Panel Header */}
@@ -213,7 +222,7 @@ export const StylePanel: React.FC = () => {
               <div className="flex items-center justify-between text-[10px] px-0.5 text-neutral-500 font-medium">
                 <button
                   onClick={() => setStrokePage((prev) => (prev > 0 ? prev - 1 : 2))}
-                  className="p-0.5 hover:text-neutral-900 transition flex items-center gap-0.5"
+                  className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
                 >
                   <ArrowLeftIcon className="w-2.5 h-2.5" />
                   <span>Пред.</span>
@@ -233,7 +242,7 @@ export const StylePanel: React.FC = () => {
 
                 <button
                   onClick={() => setStrokePage((prev) => (prev < 2 ? prev + 1 : 0))}
-                  className="p-0.5 hover:text-neutral-900 transition flex items-center gap-0.5"
+                  className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
                 >
                   <span>След.</span>
                   <ArrowRightIcon className="w-2.5 h-2.5" />
@@ -284,7 +293,7 @@ export const StylePanel: React.FC = () => {
                 <div className="flex items-center justify-between text-[10px] px-0.5 text-neutral-500 font-medium">
                   <button
                     onClick={() => setFillPage((prev) => (prev > 0 ? prev - 1 : 2))}
-                    className="p-0.5 hover:text-neutral-900 transition flex items-center gap-0.5"
+                    className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
                   >
                     <ArrowLeftIcon className="w-2.5 h-2.5" />
                     <span>Пред.</span>
@@ -304,7 +313,7 @@ export const StylePanel: React.FC = () => {
 
                   <button
                     onClick={() => setFillPage((prev) => (prev < 2 ? prev + 1 : 0))}
-                    className="p-0.5 hover:text-neutral-900 transition flex items-center gap-0.5"
+                    className="p-0.5 hover:text-neutral-200 transition flex items-center gap-0.5"
                   >
                     <span>След.</span>
                     <ArrowRightIcon className="w-2.5 h-2.5" />
@@ -434,12 +443,33 @@ export const StylePanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Text Sizes */}
+            {/* Text Font & Sizes */}
             {isTextSelected && (
-              <div className="space-y-1 border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5">
-                <label className="text-neutral-900 dark:text-neutral-100 font-bold text-[11px]">
-                  Размер текста
+              <div className="space-y-2 border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5">
+                <label className="text-neutral-900 dark:text-neutral-100 font-bold text-[11px] flex items-center gap-1">
+                  <Type className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Шрифт и Размер</span>
                 </label>
+
+                {/* Font Selector */}
+                <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
+                  {FONTS.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setActiveStyle({ fontFamily: f.id })}
+                      className={`py-1 rounded-lg text-[10px] font-semibold truncate px-1 transition ${
+                        activeStyle.fontFamily === f.id
+                          ? 'bg-blue-600 text-white shadow-sm font-bold'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-700'
+                      }`}
+                      style={{ fontFamily: f.id }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Text Sizes */}
                 <div className="grid grid-cols-4 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
                   {[16, 22, 30, 40].map((fs) => (
                     <button

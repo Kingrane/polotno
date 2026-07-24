@@ -117,12 +117,13 @@ export const TopNav: React.FC = () => {
   return (
     <>
       <header className="fixed top-3 sm:top-5 left-3 sm:left-6 right-3 sm:right-6 z-50 flex items-center justify-between pointer-events-none">
-
-        {/* Left Branding - Adaptive polotno title (prominent size on all screens) */}
+        
+        {/* Left Branding - Adaptive polotno title */}
         <div className="pointer-events-auto flex items-center gap-3">
           <span
-            className={`font-black text-2xl sm:text-3xl md:text-4xl tracking-tighter select-none transition-colors duration-300 ${isChalkboard ? 'text-white drop-shadow-md' : 'text-[#1d1d1f]'
-              }`}
+            className={`font-black text-3xl sm:text-4xl md:text-5xl tracking-tighter select-none transition-colors duration-300 ${
+              isChalkboard ? 'text-white drop-shadow-md' : 'text-[#1d1d1f]'
+            }`}
           >
             polotno
           </span>
@@ -212,10 +213,11 @@ export const TopNav: React.FC = () => {
                         setTheme(t.id);
                         setIsThemeOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold transition ${theme === t.id
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-                        }`}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left font-semibold transition ${
+                        theme === t.id
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
+                      }`}
                     >
                       <span className="flex items-center gap-2.5">
                         <span className="text-sm">{t.icon}</span>
@@ -299,30 +301,33 @@ export const TopNav: React.FC = () => {
           </button>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2.5 rounded-2xl bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-white/60 dark:border-neutral-800 text-neutral-800 dark:text-white shadow-md transition min-w-[42px] min-h-[42px] flex items-center justify-center"
+            className="p-2.5 rounded-2xl bg-neutral-900/90 text-white backdrop-blur-xl border border-neutral-700 shadow-md transition min-w-[42px] min-h-[42px] flex items-center justify-center"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </header>
 
-      {/* Mobile Drawer Dropdown Menu */}
+      {/* Mobile Drawer Dropdown Menu - High contrast & crystal clean */}
       {isMobileMenuOpen && (
-        <div className="fixed top-16 left-3 right-3 z-50 md:hidden bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl border border-white/60 dark:border-neutral-800 shadow-2xl rounded-3xl p-4 text-xs font-semibold space-y-3 animate-in fade-in zoom-in-95">
-          {/* Zoom & History row */}
-          <div className="flex items-center justify-between p-2 rounded-2xl bg-neutral-100 dark:bg-neutral-800">
-            <div className="flex items-center gap-2">
+        <div className="fixed top-16 left-3 right-3 z-50 md:hidden bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800 text-white shadow-2xl rounded-3xl p-4 text-xs font-semibold space-y-4 animate-in fade-in zoom-in-95 pointer-events-auto">
+          
+          {/* Zoom & History Section */}
+          <div className="flex items-center justify-between p-2.5 rounded-2xl bg-neutral-900 border border-neutral-800">
+            <div className="flex items-center gap-1">
               <button
                 onClick={undo}
                 disabled={history.past.length === 0}
-                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-30"
+                className="p-2.5 rounded-xl bg-neutral-800 text-white disabled:opacity-30 active:scale-95 transition"
+                title="Отменить"
               >
                 <Undo2 className="w-4 h-4" />
               </button>
               <button
                 onClick={redo}
                 disabled={history.future.length === 0}
-                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-30"
+                className="p-2.5 rounded-xl bg-neutral-800 text-white disabled:opacity-30 active:scale-95 transition"
+                title="Повторить"
               >
                 <Redo2 className="w-4 h-4" />
               </button>
@@ -331,23 +336,25 @@ export const TopNav: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => zoomAtPoint(0.85, { x: window.innerWidth / 2, y: window.innerHeight / 2 })}
-                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700"
+                className="p-2 rounded-xl bg-neutral-800 text-white active:scale-95 transition"
               >
                 <ZoomOut className="w-4 h-4" />
               </button>
-              <span className="font-mono font-bold">{zoomPercent}%</span>
+              <span className="font-mono font-extrabold text-sm px-1">{zoomPercent}%</span>
               <button
                 onClick={() => zoomAtPoint(1.15, { x: window.innerWidth / 2, y: window.innerHeight / 2 })}
-                className="p-2 rounded-xl hover:bg-white dark:hover:bg-neutral-700"
+                className="p-2 rounded-xl bg-neutral-800 text-white active:scale-95 transition"
               >
                 <ZoomIn className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Theme Selector List */}
-          <div className="space-y-1">
-            <label className="text-neutral-400 text-[10px] uppercase font-bold px-2">Тема доски</label>
+          {/* Theme Selector Grid */}
+          <div className="space-y-1.5">
+            <label className="text-neutral-400 text-[10px] uppercase tracking-wider font-extrabold px-1">
+              Тема оформления
+            </label>
             <div className="grid grid-cols-2 gap-1.5">
               {themes.map((t) => (
                 <button
@@ -356,27 +363,30 @@ export const TopNav: React.FC = () => {
                     setTheme(t.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`p-2 rounded-xl text-left flex items-center gap-2 font-semibold ${theme === t.id ? 'bg-blue-600 text-white' : 'bg-neutral-100 dark:bg-neutral-800'
-                    }`}
+                  className={`p-2.5 rounded-xl text-left flex items-center gap-2 font-bold transition text-xs ${
+                    theme === t.id
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-neutral-900 border border-neutral-800 text-neutral-200 hover:bg-neutral-800'
+                  }`}
                 >
-                  <span>{t.icon}</span>
+                  <span className="text-sm">{t.icon}</span>
                   <span className="truncate">{t.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-            <label className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 font-bold cursor-pointer">
-              <FolderInput className="w-4 h-4" />
+          {/* Actions: Import / Clear / Export */}
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-neutral-800">
+            <label className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 font-bold text-neutral-200 cursor-pointer active:scale-95 transition">
+              <FolderInput className="w-4 h-4 text-blue-400" />
               <span>Импорт</span>
               <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
             </label>
 
             <button
               onClick={handleClearCanvas}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-red-50 text-red-600 font-bold"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-red-950/60 border border-red-900/60 text-red-400 font-bold active:scale-95 transition"
             >
               <Trash2 className="w-4 h-4" />
               <span>Очистить</span>
@@ -387,7 +397,7 @@ export const TopNav: React.FC = () => {
                 setIsExportOpen(true);
                 setIsMobileMenuOpen(false);
               }}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-neutral-900 text-white font-bold"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-blue-600 text-white font-bold active:scale-95 transition"
             >
               <Download className="w-4 h-4" />
               <span>Экспорт</span>
