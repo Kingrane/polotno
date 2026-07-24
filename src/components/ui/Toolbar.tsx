@@ -16,11 +16,12 @@ import {
   Type,
   Eraser,
   Image as ImageIcon,
+  Eye,
 } from 'lucide-react';
 import { springs, pressable } from '../../lib/motion';
 
 export const Toolbar: React.FC = () => {
-  const { tool, setTool, addElement, viewport } = useCanvasStore();
+  const { tool, setTool, addElement, viewport, isReadOnly } = useCanvasStore();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [hoveredId, setHoveredId] = React.useState<string | null>(null);
 
@@ -123,6 +124,20 @@ export const Toolbar: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  if (isReadOnly) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={springs.soft}
+        className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-24px)] p-2 px-4 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 shadow-xl flex items-center gap-2 text-amber-700 dark:text-amber-300 font-extrabold text-xs"
+      >
+        <Eye className="w-4 h-4 text-amber-500 shrink-0" />
+        <span>Режим просмотра. Используйте перемещение и масштаб.</span>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

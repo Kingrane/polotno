@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, Lock, Link2, Users, Globe, Sparkles } from 'lucide-react';
+import { X, Copy, Check, Lock, Link2, Users, Globe, Sparkles, Eye, Power } from 'lucide-react';
 import { backdropVariants, modalVariants, springs } from '../../lib/motion';
 import { useCanvasStore } from '../../store/useCanvasStore';
 
@@ -12,20 +12,23 @@ interface ShareModalProps {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
-  const { currentBoardId, createNewCloudBoard } = useCanvasStore();
+  const { currentBoardId, createNewCloudBoard, disableCloudSharing } = useCanvasStore();
   const [copied, setCopied] = useState(false);
   const [accessMode, setAccessMode] = useState<'private' | 'shared'>(
     currentBoardId ? 'shared' : 'private'
   );
+  const [permissionRole, setPermissionRole] = useState<'edit' | 'view'>('edit');
   const [loading, setLoading] = useState(false);
 
-  const boardUrl = currentBoardId
+  const baseUrl = currentBoardId
     ? typeof window !== 'undefined'
       ? `${window.location.origin}/board/${currentBoardId}`
       : `https://polotno.app/board/${currentBoardId}`
     : typeof window !== 'undefined'
     ? window.location.href
     : 'https://polotno.app';
+
+  const finalShareUrl = permissionRole === 'view' ? `${baseUrl}?mode=view` : baseUrl;
 
   const handleEnableSharedBoard = async () => {
     if (!currentBoardId) {
@@ -41,13 +44,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleDisableSharing = () => {
+    disableCloudSharing();
+    setAccessMode('private');
+  };
+
   const handleCopyLink = async () => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(boardUrl);
+        await navigator.clipboard.writeText(finalShareUrl);
       } else {
         const textArea = document.createElement('textarea');
-        textArea.value = boardUrl;
+        textArea.value = finalShareUrl;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
@@ -135,25 +143,76 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                     }`}
                   >
                     <Users className="w-3.5 h-3.5" />
-                    <span>{loading ? 'Создание...' : 'Открыто для соавторов'}</span>
+                    <span>{loading ? 'Создание...' : 'Открытый доступ'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Status explanation */}
+              {/* Edit vs View Permission Switcher */}
+              {accessMode === 'shared' && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    Права по ссылке
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl text-xs font-semibold">
+                    <button
+                      onClick={() => setPermissionRole('edit')}
+                      className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+                        permissionRole === 'edit'
+                          ? 'bg-white dark:bg-neutral-700 text-blue-600 shadow-sm font-extrabold'
+                          : 'text-neutral-500'
+                      }`}
+                    >
+                      <Users className="w-3 h-3" />
+                      <span>Редактирование</span>
+                    </button>
+                    <button
+                      onClick={() => setPermissionRole('view')}
+                      className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+                        permissionRole === 'view'
+                          ? 'bg-white dark:bg-neutral-700 text-amber-600 dark:text-amber-400 shadow-sm font-extrabold'
+                          : 'text-neutral-500'
+                      }`}
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Только чтение</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Status explanation & Disable Sharing button */}
               {accessMode === 'shared' ? (
-                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs space-y-1">
-                  <div className="font-extrabold flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>Открыто для быстрой совместной работы</span>
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs space-y-2">
+                  <div className="font-extrabold flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>{permissionRole === 'edit' ? 'Совместное редактирование' : 'Режим просмотра (Read-only)'}</span>
+                    </span>
                   </div>
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-300 opacity-90">
-                    Любой человек по этой ссылке может сразу рисовать вместе с вами. Виджет облачного сохранения активирован внизу справа!
+                    {permissionRole === 'edit'
+                      ? 'Любой человек по этой ссылке сможет рисовать вместе с вами в реальном времени.'
+                      : 'Пользователи смогут просматривать, панорамировать и зумить доску без возможности редактирования.'}
                   </p>
+                  
+                  {currentBoardId && (
+                    <button
+                      type="button"
+                      onClick={handleDisableSharing}
+                      className="w-full mt-1 py-1.5 px-2 rounded-xl bg-neutral-900/10 dark:bg-white/10 hover:bg-red-500/20 text-neutral-700 dark:text-neutral-200 font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Power className="w-3 h-3 text-red-500" />
+                      <span>Выключить облако (Вернуться в локальный режим)</span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-xs">
-                  Доска находится в вашей локальной памяти браузера. Выберите «Открыто для соавторов», чтобы сгенерировать облачную ссылку.
+                <div className="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-xs space-y-1">
+                  <div>Доска сохраняется в вашей локальной памяти браузера (LocalStorage).</div>
+                  <div className="text-[11px] text-neutral-400">
+                    Нажмите «Открытый доступ», чтобы опубликовать доску в облаке.
+                  </div>
                 </div>
               )}
 
@@ -162,7 +221,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
                 <input
                   type="text"
                   readOnly
-                  value={boardUrl}
+                  value={finalShareUrl}
                   className="flex-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono text-neutral-700 dark:text-neutral-300 outline-none"
                 />
                 <motion.button

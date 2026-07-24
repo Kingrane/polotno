@@ -97,12 +97,15 @@ export const StylePanel: React.FC = () => {
     bringToFront,
     sendToBack,
     isPro,
+    isReadOnly,
   } = useCanvasStore();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [strokePage, setStrokePage] = useState(0);
   const [fillPage, setFillPage] = useState(0);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
+
+  if (isReadOnly) return null;
 
   const selectedElements = elements.filter((el) => selectedElementIds.includes(el.id));
   const hasSelection = selectedElements.length > 0;

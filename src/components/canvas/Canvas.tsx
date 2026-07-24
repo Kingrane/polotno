@@ -42,6 +42,7 @@ export const Canvas: React.FC = () => {
     pan,
     zoomAtPoint,
     setTool,
+    isReadOnly,
     loadFromLocalStorage,
     saveSnapshot,
   } = useCanvasStore();
@@ -323,6 +324,13 @@ export const Canvas: React.FC = () => {
 
     const screenPt = { x: e.clientX, y: e.clientY };
     const worldPt = screenToCanvas(screenPt, viewport);
+
+    if (isReadOnly) {
+      setIsPanning(true);
+      dragStartPoint.current = screenPt;
+      document.body.style.cursor = 'grabbing';
+      return;
+    }
 
     // Pan with Middle Mouse OR Space Key OR Hand tool
     if (e.button === 1 || spaceKeyPressed.current || tool === 'hand') {
@@ -709,6 +717,7 @@ export const Canvas: React.FC = () => {
 
   // Double Click to Edit Text
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isReadOnly) return;
     const screenPt = { x: e.clientX, y: e.clientY };
     const worldPt = screenToCanvas(screenPt, viewport);
 

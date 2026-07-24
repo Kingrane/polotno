@@ -41,6 +41,7 @@ interface CanvasStoreState {
   boardTitle: string;
   isSyncing: boolean;
   isPro: boolean;
+  isReadOnly: boolean;
   user: UserProfile | null;
 
   history: {
@@ -71,20 +72,17 @@ interface CanvasStoreState {
   zoomAtPoint: (zoomFactor: number, centerPoint: Point) => void;
   resetZoom: () => void;
 
-  // Tool & Theme & Title & Pro
+  // Tool & Theme & Title & Pro & ReadOnly
   setTool: (tool: ToolType) => void;
   setTheme: (theme: BoardTheme) => void;
   setBoardTitle: (title: string) => void;
   setActiveStyle: (styleUpdates: Partial<StyleOptions>) => void;
   setUser: (user: UserProfile | null) => void;
+  setIsReadOnly: (isReadOnly: boolean) => void;
   activateProWithCode: (code: string) => { success: boolean; isNowPro: boolean; message: string };
 
-  // History Undo/Redo
-  saveSnapshot: () => void;
-  undo: () => void;
-  redo: () => void;
-
   // Cloud & Local Storage
+  disableCloudSharing: () => void;
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => void;
   loadBoardFromCloud: (boardId: string) => Promise<boolean>;
@@ -93,6 +91,11 @@ interface CanvasStoreState {
   exportJSON: () => string;
   importJSON: (jsonString: string) => boolean;
   clearCanvas: () => void;
+
+  // History Undo/Redo
+  saveSnapshot: () => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 let syncTimeout: NodeJS.Timeout | null = null;
@@ -108,6 +111,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   boardTitle: 'Новая доска',
   isSyncing: false,
   isPro: false,
+  isReadOnly: false,
   user: null,
   history: {
     past: [],
@@ -115,12 +119,14 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   setElements: (elements) => {
+    if (get().isReadOnly) return;
     set({ elements });
     get().saveToLocalStorage();
     get().saveBoardToCloud();
   },
 
   addElement: (element) => {
+    if (get().isReadOnly) return;
     get().saveSnapshot();
     set((state) => ({
       elements: [...state.elements, element],
@@ -130,6 +136,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   updateElement: (id, updates) => {
+    if (get().isReadOnly) return;
     set((state) => ({
       elements: state.elements.map((el) =>
         el.id === id ? { ...el, ...updates } : el
@@ -140,6 +147,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   updateSelectedElements: (updates) => {
+    if (get().isReadOnly) return;
     const { selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -155,6 +163,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   deleteSelectedElements: () => {
+    if (get().isReadOnly) return;
     const { selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -167,16 +176,25 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     get().saveBoardToCloud();
   },
 
-  setSelectedElementIds: (ids) => set({ selectedElementIds: ids }),
+  setSelectedElementIds: (ids) => {
+    if (get().isReadOnly) {
+      set({ selectedElementIds: [] });
+    } else {
+      set({ selectedElementIds: ids });
+    }
+  },
+
   clearSelection: () => set({ selectedElementIds: [] }),
 
   selectAll: () => {
+    if (get().isReadOnly) return;
     set((state) => ({
       selectedElementIds: state.elements.map((el) => el.id),
     }));
   },
 
   duplicateSelected: () => {
+    if (get().isReadOnly) return;
     const { elements, selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -199,6 +217,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   bringForward: () => {
+    if (get().isReadOnly) return;
     const { elements, selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -217,6 +236,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   sendBackward: () => {
+    if (get().isReadOnly) return;
     const { elements, selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -235,6 +255,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   bringToFront: () => {
+    if (get().isReadOnly) return;
     const { elements, selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -247,6 +268,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   sendToBack: () => {
+    if (get().isReadOnly) return;
     const { elements, selectedElementIds } = get();
     if (selectedElementIds.length === 0) return;
     get().saveSnapshot();
@@ -304,6 +326,10 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   setTool: (tool) => {
+    if (get().isReadOnly) {
+      set({ tool: 'hand' });
+      return;
+    }
     set({ tool });
     if (tool !== 'select') {
       set({ selectedElementIds: [] });
@@ -330,6 +356,21 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
 
   setUser: (user) => {
     set({ user, isPro: user?.isPro || get().isPro });
+    try {
+      if (user) {
+        localStorage.setItem('polotno_user_session', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('polotno_user_session');
+      }
+    } catch {}
+  },
+
+  setIsReadOnly: (isReadOnly) => {
+    set({
+      isReadOnly,
+      tool: isReadOnly ? 'hand' : 'pencil',
+      selectedElementIds: [],
+    });
   },
 
   activateProWithCode: (code: string) => {
@@ -355,7 +396,16 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     };
   },
 
+  disableCloudSharing: () => {
+    set({ currentBoardId: null });
+    get().saveToLocalStorage();
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/');
+    }
+  },
+
   saveSnapshot: () => {
+    if (get().isReadOnly) return;
     set((state) => ({
       history: {
         past: [...state.history.past, state.elements],
@@ -365,6 +415,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   undo: () => {
+    if (get().isReadOnly) return;
     const { history, elements } = get();
     if (history.past.length === 0) return;
 
@@ -384,6 +435,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   redo: () => {
+    if (get().isReadOnly) return;
     const { history, elements } = get();
     if (history.future.length === 0) return;
 
@@ -404,12 +456,15 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
 
   saveToLocalStorage: () => {
     try {
-      const { elements, theme, currentBoardId, boardTitle, isPro } = get();
+      const { elements, theme, currentBoardId, boardTitle, isPro, user } = get();
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ elements, theme, currentBoardId, boardTitle, isPro, updatedAt: new Date().toISOString() })
+        JSON.stringify({ elements, theme, currentBoardId, boardTitle, updatedAt: new Date().toISOString() })
       );
       localStorage.setItem('polotno_is_pro', JSON.stringify(isPro));
+      if (user) {
+        localStorage.setItem('polotno_user_session', JSON.stringify(user));
+      }
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
     }
@@ -417,6 +472,14 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
 
   loadFromLocalStorage: () => {
     try {
+      // Check Read-Only mode in URL search params ?mode=view
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'view') {
+          set({ isReadOnly: true, tool: 'hand' });
+        }
+      }
+
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         const parsed = JSON.parse(data);
@@ -433,9 +496,16 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
           set({ boardTitle: parsed.boardTitle });
         }
       }
+
       const savedPro = localStorage.getItem('polotno_is_pro');
       if (savedPro) {
         set({ isPro: JSON.parse(savedPro) });
+      }
+
+      const savedUser = localStorage.getItem('polotno_user_session');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        set({ user: parsedUser, isPro: parsedUser?.isPro || get().isPro });
       }
     } catch (e) {
       console.error('Failed to load from localStorage:', e);
@@ -445,6 +515,15 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   loadBoardFromCloud: async (boardId: string) => {
     try {
       set({ isSyncing: true, currentBoardId: boardId });
+
+      // Check Read-Only mode in URL search params ?mode=view
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'view') {
+          set({ isReadOnly: true, tool: 'hand' });
+        }
+      }
+
       const res = await fetch(`/api/boards/${boardId}`);
       if (res.ok) {
         const data = await res.json();
@@ -457,6 +536,13 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
             selectedElementIds: [],
             isSyncing: false,
           });
+
+          // Always preserve user session & Pro status
+          const savedPro = localStorage.getItem('polotno_is_pro');
+          if (savedPro) set({ isPro: JSON.parse(savedPro) });
+          const savedUser = localStorage.getItem('polotno_user_session');
+          if (savedUser) set({ user: JSON.parse(savedUser) });
+
           get().saveToLocalStorage();
           return true;
         }
@@ -470,6 +556,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   saveBoardToCloud: async () => {
+    if (get().isReadOnly) return;
     const { currentBoardId, elements, theme, boardTitle, viewport } = get();
     if (!currentBoardId) return;
 
@@ -546,6 +633,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   importJSON: (jsonString) => {
+    if (get().isReadOnly) return false;
     try {
       const data = JSON.parse(jsonString);
       if (data.type === 'polotno-scene' && Array.isArray(data.elements)) {
@@ -567,6 +655,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   },
 
   clearCanvas: () => {
+    if (get().isReadOnly) return;
     get().saveSnapshot();
     set({ elements: [], selectedElementIds: [] });
     get().saveToLocalStorage();

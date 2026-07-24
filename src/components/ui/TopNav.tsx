@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   User as UserIcon,
+  Eye,
   HelpCircle,
 } from 'lucide-react';
 import { ExportModal } from './ExportModal';
@@ -43,6 +44,8 @@ export const TopNav: React.FC = () => {
     clearCanvas,
     isPro,
     user,
+    isReadOnly,
+    setIsReadOnly,
   } = useCanvasStore();
 
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -153,6 +156,19 @@ export const TopNav: React.FC = () => {
           >
             polotno
           </motion.span>
+
+          {isReadOnly && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold shadow-md">
+              <Eye className="w-3.5 h-3.5" />
+              <span>Только чтение</span>
+              <button
+                onClick={() => setIsReadOnly(false)}
+                className="ml-1 text-[10px] bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5 rounded-md font-extrabold transition"
+              >
+                Редактировать
+              </button>
+            </div>
+          )}
         </motion.div>
 
         {/* Compact Desktop Controls Header */}
