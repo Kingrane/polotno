@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { StrokeStyle, Sloppiness } from '../../engine/types';
 import {
@@ -21,6 +22,7 @@ import {
   ChevronLeft as ArrowLeftIcon,
 } from 'lucide-react';
 import { ProModal } from './ProModal';
+import { springs } from '../../lib/motion';
 
 // 3 Pages x 16 Curated Stroke Colors = 48 Colors Total
 const STROKE_COLOR_PAGES = [
@@ -122,32 +124,49 @@ export const StylePanel: React.FC = () => {
 
   return (
     <>
-      <div
-        className={`fixed top-1/2 -translate-y-1/2 left-2 sm:left-4 z-40 transition-transform duration-300 ease-out max-w-[calc(100vw-16px)] ${
-          isCollapsed ? '-translate-x-[calc(100%+20px)]' : 'translate-x-0'
-        }`}
+      <motion.div
+        initial={{ opacity: 0, x: -18 }}
+        animate={{
+          opacity: 1,
+          x: isCollapsed ? 'calc(-100% - 20px)' : 0,
+        }}
+        transition={springs.soft}
+        className="fixed top-1/2 -translate-y-1/2 left-2 sm:left-4 z-40 max-w-[calc(100vw-16px)]"
       >
         {/* Relative wrapper without overflow so attached tab button is NEVER clipped */}
         <div className="relative w-64 sm:w-64">
           
           {/* Attached Vertical Tab Toggle Button */}
-          <button
+          <motion.button
+            whileHover={{ x: 2 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute -right-8 top-1/2 -translate-y-1/2 py-4 px-1.5 rounded-r-2xl bg-neutral-900 text-white shadow-2xl hover:bg-neutral-800 transition flex flex-col items-center gap-1 font-extrabold text-[9px] tracking-widest uppercase cursor-pointer z-50 min-h-[44px]"
+            className="absolute -right-8 top-1/2 -translate-y-1/2 py-4 px-1.5 rounded-r-2xl bg-neutral-900 text-white shadow-2xl hover:bg-neutral-800 flex flex-col items-center gap-1 font-extrabold text-[9px] tracking-widest uppercase cursor-pointer z-50 min-h-[44px]"
             title={isCollapsed ? 'Открыть панель' : 'Скрыть панель'}
           >
-            {isCollapsed ? (
-              <>
-                <ChevronRight className="w-3.5 h-3.5 text-blue-400 mb-0.5" />
-                <span className="[writing-mode:vertical-lr]">ОТКРЫТЬ</span>
-              </>
-            ) : (
-              <>
-                <ChevronLeft className="w-3.5 h-3.5 text-neutral-400 mb-0.5" />
-                <span className="[writing-mode:vertical-lr]">ЗАКРЫТЬ</span>
-              </>
-            )}
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={isCollapsed ? 'open' : 'close'}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col items-center gap-1"
+              >
+                {isCollapsed ? (
+                  <>
+                    <ChevronRight className="w-3.5 h-3.5 text-blue-400 mb-0.5" />
+                    <span className="[writing-mode:vertical-lr]">ОТКРЫТЬ</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronLeft className="w-3.5 h-3.5 text-neutral-400 mb-0.5" />
+                    <span className="[writing-mode:vertical-lr]">ЗАКРЫТЬ</span>
+                  </>
+                )}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
 
           {/* Inner Content Container */}
           <div className="w-full max-h-[calc(100vh-140px)] overflow-y-auto bg-white/90 dark:bg-neutral-900/90 backdrop-blur-2xl backdrop-saturate-150 border border-white/60 dark:border-neutral-800 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[22px] p-3 text-xs font-semibold space-y-3">
@@ -156,28 +175,44 @@ export const StylePanel: React.FC = () => {
             <div className="flex items-center justify-between pb-2 border-b border-neutral-200/60 dark:border-neutral-800">
               <div className="flex items-center gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600" />
-                <span className="text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-black text-[10px]">
-                  {hasSelection ? `Свойства (${selectedElements.length})` : 'Стиль фигуры'}
-                </span>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={hasSelection ? `sel-${selectedElements.length}` : 'style'}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="text-neutral-900 dark:text-neutral-100 uppercase tracking-wider font-black text-[10px]"
+                  >
+                    {hasSelection ? `Свойства (${selectedElements.length})` : 'Стиль фигуры'}
+                  </motion.span>
+                </AnimatePresence>
               </div>
 
               {hasSelection && (
-                <div className="flex items-center gap-1">
-                  <button
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1"
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={duplicateSelected}
-                    className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition"
+                    className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
                     title="Дублировать (Ctrl+D)"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={deleteSelectedElements}
-                    className="p-1 rounded-lg hover:bg-red-50 text-red-600 transition"
+                    className="p-1 rounded-lg hover:bg-red-50 text-red-600"
                     title="Удалить (Delete)"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
               )}
             </div>
 
@@ -204,18 +239,36 @@ export const StylePanel: React.FC = () => {
 
               {/* 16 Colors Grid (8x2) */}
               <div className="grid grid-cols-8 gap-1 p-1 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/70">
-                {STROKE_COLOR_PAGES[strokePage].map((color, idx) => (
-                  <button
-                    key={`${strokePage}-${idx}-${color}`}
-                    onClick={() => setActiveStyle({ strokeColor: color })}
-                    className={`w-5 h-5 rounded-full border transition-transform relative ${
-                      activeStyle.strokeColor === color
-                        ? 'scale-125 border-blue-600 shadow-md ring-2 ring-blue-500/30 z-10'
-                        : 'border-neutral-300 dark:border-neutral-700 hover:scale-110'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={strokePage}
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.15 }}
+                    className="contents"
+                  >
+                    {STROKE_COLOR_PAGES[strokePage].map((color, idx) => {
+                      const selected = activeStyle.strokeColor === color;
+                      return (
+                        <motion.button
+                          key={`${strokePage}-${idx}-${color}`}
+                          whileHover={{ scale: 1.18 }}
+                          whileTap={{ scale: 0.88 }}
+                          onClick={() => setActiveStyle({ strokeColor: color })}
+                          className={`w-5 h-5 rounded-full border relative ${
+                            selected
+                              ? 'border-blue-600 shadow-md ring-2 ring-blue-500/30 z-10'
+                              : 'border-neutral-300 dark:border-neutral-700'
+                          }`}
+                          animate={{ scale: selected ? 1.22 : 1 }}
+                          transition={springs.snappy}
+                          style={{ backgroundColor: color }}
+                        />
+                      );
+                    })}
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
               {/* Stroke Page Navigation Dots */}
@@ -230,12 +283,14 @@ export const StylePanel: React.FC = () => {
 
                 <div className="flex items-center gap-1">
                   {[0, 1, 2].map((p) => (
-                    <button
+                    <motion.button
                       key={p}
                       onClick={() => setStrokePage(p)}
-                      className={`w-1.5 h-1.5 rounded-full transition-all ${
-                        strokePage === p ? 'bg-blue-600 w-3' : 'bg-neutral-300 dark:bg-neutral-700'
-                      }`}
+                      animate={{
+                        width: strokePage === p ? 12 : 6,
+                        backgroundColor: strokePage === p ? '#2563eb' : '#d4d4d4',
+                      }}
+                      className="h-1.5 rounded-full"
                     />
                   ))}
                 </div>
@@ -252,7 +307,11 @@ export const StylePanel: React.FC = () => {
 
             {/* Fill Color (3 Pages of 16 colors) */}
             {!isTextSelected && (
-              <div className="space-y-1.5 border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-1.5 border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5"
+              >
                 <div className="flex items-center justify-between">
                   <label className="text-neutral-900 dark:text-neutral-100 font-bold text-[11px] flex items-center gap-1">
                     <span>Заливка</span>
@@ -261,32 +320,43 @@ export const StylePanel: React.FC = () => {
                     </span>
                   </label>
                   {activeStyle.fillColor !== 'transparent' && (
-                    <span className="text-[9px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full font-bold border border-emerald-500/20">
+                    <motion.span
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="text-[9px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full font-bold border border-emerald-500/20"
+                    >
                       Включена
-                    </span>
+                    </motion.span>
                   )}
                 </div>
 
                 {/* 16 Fill Colors Grid */}
                 <div className="grid grid-cols-8 gap-1 p-1 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/70">
-                  {FILL_COLOR_PAGES[fillPage].map((color, idx) => (
-                    <button
-                      key={`${fillPage}-${idx}-${color}`}
-                      onClick={() => handleSelectFillColor(color)}
-                      className={`w-5 h-5 rounded-full border transition-transform relative ${
-                        activeStyle.fillColor === color
-                          ? 'scale-125 border-blue-600 shadow-md ring-2 ring-blue-500/30 z-10'
-                          : 'border-neutral-300 dark:border-neutral-700 hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: color === 'transparent' ? '#ffffff' : color }}
-                    >
-                      {color === 'transparent' && (
-                        <div className="absolute inset-0 flex items-center justify-center text-red-500 font-bold text-[9px]">
-                          ✕
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                  {FILL_COLOR_PAGES[fillPage].map((color, idx) => {
+                    const selected = activeStyle.fillColor === color;
+                    return (
+                      <motion.button
+                        key={`${fillPage}-${idx}-${color}`}
+                        whileHover={{ scale: 1.18 }}
+                        whileTap={{ scale: 0.88 }}
+                        onClick={() => handleSelectFillColor(color)}
+                        animate={{ scale: selected ? 1.22 : 1 }}
+                        transition={springs.snappy}
+                        className={`w-5 h-5 rounded-full border relative ${
+                          selected
+                            ? 'border-blue-600 shadow-md ring-2 ring-blue-500/30 z-10'
+                            : 'border-neutral-300 dark:border-neutral-700'
+                        }`}
+                        style={{ backgroundColor: color === 'transparent' ? '#ffffff' : color }}
+                      >
+                        {color === 'transparent' && (
+                          <div className="absolute inset-0 flex items-center justify-center text-red-500 font-bold text-[9px]">
+                            ✕
+                          </div>
+                        )}
+                      </motion.button>
+                    );
+                  })}
                 </div>
 
                 {/* Fill Page Navigation Dots */}
@@ -322,36 +392,43 @@ export const StylePanel: React.FC = () => {
 
                 {/* Fill Style Selector */}
                 {activeStyle.fillColor !== 'transparent' && (
-                  <div className="grid grid-cols-2 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
-                    <button
-                      onClick={() => setActiveStyle({ fillStyle: 'solid' })}
-                      className={`py-1 rounded-lg text-[10px] font-extrabold transition ${
-                        activeStyle.fillStyle === 'solid'
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900'
-                      }`}
-                    >
-                      Сплошная
-                    </button>
-                    <button
-                      onClick={() => setActiveStyle({ fillStyle: 'hachure' })}
-                      className={`py-1 rounded-lg text-[10px] font-extrabold transition ${
-                        activeStyle.fillStyle === 'hachure'
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900'
-                      }`}
-                    >
-                      Штриховка
-                    </button>
-                  </div>
+                  <LayoutGroup id="fill-style">
+                    <div className="grid grid-cols-2 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl relative">
+                      {([
+                        { id: 'solid' as const, label: 'Сплошная' },
+                        { id: 'hachure' as const, label: 'Штриховка' },
+                      ]).map((opt) => (
+                        <button
+                          key={opt.id}
+                          onClick={() => setActiveStyle({ fillStyle: opt.id })}
+                          className={`relative py-1 rounded-lg text-[10px] font-extrabold z-10 ${
+                            activeStyle.fillStyle === opt.id
+                              ? 'text-white'
+                              : 'text-neutral-700 dark:text-neutral-300'
+                          }`}
+                        >
+                          {activeStyle.fillStyle === opt.id && (
+                            <motion.span
+                              layoutId="fill-style-pill"
+                              className="absolute inset-0 rounded-lg bg-blue-600 shadow-sm"
+                              transition={springs.snappy}
+                            />
+                          )}
+                          <span className="relative z-10">{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </LayoutGroup>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Pro Teaser Banner */}
-            <div
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setIsProModalOpen(true)}
-              className="p-2 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 flex items-center justify-between text-[10px] text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-amber-500/15 transition"
+              className="p-2 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 flex items-center justify-between text-[10px] text-neutral-700 dark:text-neutral-300 cursor-pointer"
             >
               <span className="flex items-center gap-1 font-bold">
                 <Lock className="w-3 h-3 text-amber-500" />
@@ -360,32 +437,41 @@ export const StylePanel: React.FC = () => {
               <span className="px-1.5 py-0.5 bg-amber-500 text-white rounded text-[8px] font-extrabold shadow-sm">
                 79 ₽/мес
               </span>
-            </div>
+            </motion.div>
 
             {/* Stroke Width */}
             <div className="space-y-1">
               <label className="text-neutral-900 dark:text-neutral-100 font-bold text-[11px]">
                 Толщина линии
               </label>
-              <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
-                {[
-                  { label: 'Тонкая', val: 2 },
-                  { label: 'Средняя', val: 4 },
-                  { label: 'Толстая', val: 6 },
-                ].map((w) => (
-                  <button
-                    key={w.val}
-                    onClick={() => setActiveStyle({ strokeWidth: w.val })}
-                    className={`py-1 rounded-lg text-[11px] font-bold transition ${
-                      activeStyle.strokeWidth === w.val
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-700'
-                    }`}
-                  >
-                    {w.label}
-                  </button>
-                ))}
-              </div>
+              <LayoutGroup id="stroke-width">
+                <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
+                  {[
+                    { label: 'Тонкая', val: 2 },
+                    { label: 'Средняя', val: 4 },
+                    { label: 'Толстая', val: 6 },
+                  ].map((w) => (
+                    <button
+                      key={w.val}
+                      onClick={() => setActiveStyle({ strokeWidth: w.val })}
+                      className={`relative py-1 rounded-lg text-[11px] font-bold z-10 ${
+                        activeStyle.strokeWidth === w.val
+                          ? 'text-white'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/40 dark:hover:bg-neutral-700'
+                      }`}
+                    >
+                      {activeStyle.strokeWidth === w.val && (
+                        <motion.span
+                          layoutId="stroke-width-pill"
+                          className="absolute inset-0 rounded-lg bg-blue-600 shadow-sm"
+                          transition={springs.snappy}
+                        />
+                      )}
+                      <span className="relative z-10">{w.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </LayoutGroup>
             </div>
 
             {/* Stroke Style */}
@@ -393,25 +479,34 @@ export const StylePanel: React.FC = () => {
               <label className="text-neutral-900 dark:text-neutral-100 font-bold text-[11px]">
                 Стиль линии
               </label>
-              <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
-                {[
-                  { id: 'solid' as StrokeStyle, label: 'Сплошная' },
-                  { id: 'dashed' as StrokeStyle, label: 'Пунктир' },
-                  { id: 'dotted' as StrokeStyle, label: 'Точки' },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveStyle({ strokeStyle: s.id })}
-                    className={`py-1 rounded-lg text-[11px] font-bold transition ${
-                      activeStyle.strokeStyle === s.id
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-700'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
+              <LayoutGroup id="stroke-style">
+                <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
+                  {[
+                    { id: 'solid' as StrokeStyle, label: 'Сплошная' },
+                    { id: 'dashed' as StrokeStyle, label: 'Пунктир' },
+                    { id: 'dotted' as StrokeStyle, label: 'Точки' },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setActiveStyle({ strokeStyle: s.id })}
+                      className={`relative py-1 rounded-lg text-[11px] font-bold z-10 ${
+                        activeStyle.strokeStyle === s.id
+                          ? 'text-white'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/40 dark:hover:bg-neutral-700'
+                      }`}
+                    >
+                      {activeStyle.strokeStyle === s.id && (
+                        <motion.span
+                          layoutId="stroke-style-pill"
+                          className="absolute inset-0 rounded-lg bg-blue-600 shadow-sm"
+                          transition={springs.snappy}
+                        />
+                      )}
+                      <span className="relative z-10">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </LayoutGroup>
             </div>
 
             {/* Sloppiness */}
@@ -420,27 +515,36 @@ export const StylePanel: React.FC = () => {
                 <Sparkles className="w-3 h-3 text-amber-500" />
                 <span>Эффект от руки</span>
               </label>
-              <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
-                {[
-                  { val: 0, label: 'Четко' },
-                  { val: 1, label: 'Набросок' },
-                  { val: 2, label: 'Грубо' },
-                ].map((r) => (
-                  <button
-                    key={r.val}
-                    onClick={() =>
-                      setActiveStyle({ roughness: r.val as Sloppiness, isHanddrawn: r.val > 0 })
-                    }
-                    className={`py-1 rounded-lg text-[11px] font-bold transition ${
-                      activeStyle.roughness === r.val
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-700'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
+              <LayoutGroup id="roughness">
+                <div className="grid grid-cols-3 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl">
+                  {[
+                    { val: 0, label: 'Четко' },
+                    { val: 1, label: 'Набросок' },
+                    { val: 2, label: 'Грубо' },
+                  ].map((r) => (
+                    <button
+                      key={r.val}
+                      onClick={() =>
+                        setActiveStyle({ roughness: r.val as Sloppiness, isHanddrawn: r.val > 0 })
+                      }
+                      className={`relative py-1 rounded-lg text-[11px] font-bold z-10 ${
+                        activeStyle.roughness === r.val
+                          ? 'text-white'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-white/40 dark:hover:bg-neutral-700'
+                      }`}
+                    >
+                      {activeStyle.roughness === r.val && (
+                        <motion.span
+                          layoutId="roughness-pill"
+                          className="absolute inset-0 rounded-lg bg-blue-600 shadow-sm"
+                          transition={springs.snappy}
+                        />
+                      )}
+                      <span className="relative z-10">{r.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </LayoutGroup>
             </div>
 
             {/* Text Font & Sizes */}
@@ -490,46 +594,39 @@ export const StylePanel: React.FC = () => {
 
             {/* Layers */}
             {hasSelection && (
-              <div className="space-y-1 border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-1 border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5"
+              >
                 <label className="text-neutral-900 dark:text-neutral-100 font-bold text-[11px] flex items-center gap-1">
                   <Layers className="w-3 h-3 text-blue-600" />
                   <span>Слои объектов</span>
                 </label>
                 <div className="grid grid-cols-4 gap-1 bg-neutral-100/80 dark:bg-neutral-800/80 p-1 rounded-xl text-neutral-700 dark:text-neutral-300">
-                  <button
-                    onClick={sendToBack}
-                    className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-neutral-700 flex justify-center transition"
-                    title="На самый задний план"
-                  >
-                    <ChevronsDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={sendBackward}
-                    className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-neutral-700 flex justify-center transition"
-                    title="Назад"
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={bringForward}
-                    className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-neutral-700 flex justify-center transition"
-                    title="Вперед"
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={bringToFront}
-                    className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-neutral-700 flex justify-center transition"
-                    title="На самый передний план"
-                  >
-                    <ChevronsUp className="w-3.5 h-3.5" />
-                  </button>
+                  {[
+                    { fn: sendToBack, icon: ChevronsDown, title: 'На самый задний план' },
+                    { fn: sendBackward, icon: ArrowDown, title: 'Назад' },
+                    { fn: bringForward, icon: ArrowUp, title: 'Вперед' },
+                    { fn: bringToFront, icon: ChevronsUp, title: 'На самый передний план' },
+                  ].map(({ fn, icon: Icon, title }) => (
+                    <motion.button
+                      key={title}
+                      whileHover={{ scale: 1.08, y: -1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={fn}
+                      className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-neutral-700 flex justify-center"
+                      title={title}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                    </motion.button>
+                  ))}
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Pro Modal */}
       <ProModal isOpen={isProModalOpen} onClose={() => setIsProModalOpen(false)} />

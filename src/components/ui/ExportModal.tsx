@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { renderScene } from '../../engine/renderer';
 import { getCombinedBounds } from '../../engine/math';
 import { Download, Copy, FileCode, Image as ImageIcon, X, Check } from 'lucide-react';
+import { backdropVariants, modalVariants, springs } from '../../lib/motion';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -14,8 +16,6 @@ interface ExportModalProps {
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
   const { elements, theme, exportJSON } = useCanvasStore();
   const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
 
   const handleExportPNG = () => {
     if (elements.length === 0) {
@@ -95,81 +95,103 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
     onClose();
   };
 
+  const options = [
+    {
+      key: 'png',
+      onClick: handleExportPNG,
+      icon: <ImageIcon className="w-5 h-5" />,
+      iconBg: 'bg-blue-50 text-blue-600',
+      title: 'Сохранить PNG',
+      subtitle: 'Стандартное качество',
+      trailing: <Download className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition" />,
+    },
+    {
+      key: 'copy',
+      onClick: handleCopyPNG,
+      icon: copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />,
+      iconBg: 'bg-amber-50 text-amber-600',
+      title: copied ? 'Скопировано в буфер!' : 'Скопировать как картинку',
+      subtitle: 'Вставить в Figma / Telegram / Slack',
+      trailing: null,
+    },
+    {
+      key: 'json',
+      onClick: handleExportJSON,
+      icon: <FileCode className="w-5 h-5" />,
+      iconBg: 'bg-purple-50 text-purple-600',
+      title: 'Файл `.json`',
+      subtitle: 'Для переноса и полных бэкапов',
+      trailing: <Download className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition" />,
+    },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in-95">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
-          <X className="w-4 h-4" />
-        </button>
+          <motion.div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            variants={backdropVariants}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+          />
 
-        <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-          Экспорт доски
-        </h3>
-        <p className="text-xs text-neutral-500 mb-6">
-          Выберите удобный формат для сохранения или копирования вашей доски.
-        </p>
-
-        <div className="space-y-3">
-          {/* PNG Download */}
-          <button
-            onClick={handleExportPNG}
-            className="w-full flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700 transition group text-left"
+          <motion.div
+            variants={modalVariants}
+            className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 w-full max-w-md shadow-2xl"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                <ImageIcon className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                  Сохранить PNG
-                </div>
-                <div className="text-xs text-neutral-500">Стандартное качество</div>
-              </div>
-            </div>
-            <Download className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition" />
-          </button>
+            <motion.button
+              whileHover={{ scale: 1.08, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              transition={springs.snappy}
+              onClick={onClose}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition"
+            >
+              <X className="w-4 h-4" />
+            </motion.button>
 
-          {/* Copy PNG */}
-          <button
-            onClick={handleCopyPNG}
-            className="w-full flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700 transition group text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-              </div>
-              <div>
-                <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                  {copied ? 'Скопировано в буфер!' : 'Скопировать как картинку'}
-                </div>
-                <div className="text-xs text-neutral-500">Вставить в Figma / Telegram / Slack</div>
-              </div>
-            </div>
-          </button>
+            <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              Экспорт доски
+            </h3>
+            <p className="text-xs text-neutral-500 mb-6">
+              Выберите удобный формат для сохранения или копирования вашей доски.
+            </p>
 
-          {/* JSON Scene */}
-          <button
-            onClick={handleExportJSON}
-            className="w-full flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700 transition group text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                <FileCode className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
-                  Файл `.json`
-                </div>
-                <div className="text-xs text-neutral-500">Для переноса и полных бэкапов</div>
-              </div>
+            <div className="space-y-3">
+              {options.map((opt, i) => (
+                <motion.button
+                  key={opt.key}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ ...springs.snappy, delay: 0.05 + i * 0.04 }}
+                  whileHover={{ scale: 1.015, x: 2 }}
+                  whileTap={{ scale: 0.985 }}
+                  onClick={opt.onClick}
+                  className="w-full flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700 transition group text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${opt.iconBg}`}>
+                      {opt.icon}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                        {opt.title}
+                      </div>
+                      <div className="text-xs text-neutral-500">{opt.subtitle}</div>
+                    </div>
+                  </div>
+                  {opt.trailing}
+                </motion.button>
+              ))}
             </div>
-            <Download className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition" />
-          </button>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

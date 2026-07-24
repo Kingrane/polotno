@@ -13,6 +13,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 🛠 Технологический стек
 - **Фреймворк**: Next.js 14+ (App Router, TypeScript)
 - **Стилизация & Шрифты**: Tailwind CSS v4, Google Fonts (`Mulish`, `Geist`)
+- **Анимации**: Framer Motion (`src/lib/motion.ts` — spring-пресеты Apple HIG 150–250 мс)
 - **Рендер холста**: HTML5 Canvas + `roughjs` (ручной эскизный стиль) + `perfect-freehand` (плавные линии карандаша)
 - **Состояние**: Zustand (`useCanvasStore.ts`)
 - **Иконки**: `lucide-react`
@@ -70,6 +71,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Очистка холста кнопкой «Мусорный бак» в шапке.
 - Автосохранение сцены в `localStorage`.
 - Модалки экспорта (PNG, буфер обмена, `.json`) и шеринга.
+- **Живые микро-анимации (Framer Motion)**:
+  - Toolbar: sliding active-pill, spring press/hover, staggered mount, tooltips.
+  - TopNav: entrance islands, zoom %-flip, theme dropdown, mobile drawer, icon morph.
+  - StylePanel: spring collapse, color swatch bounce, layoutId segmented controls.
+  - Модалки Pro/Export/Share: backdrop blur + scale spring + staggered content.
+  - EmptyHint: дружелюбная подсказка на пустом холсте (исчезает после первого штриха).
+  - `prefers-reduced-motion` в `globals.css`.
 
 ---
 
